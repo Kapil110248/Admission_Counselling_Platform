@@ -107,67 +107,88 @@ export default function CounsellorDashboard() {
 
         {/* Dashboard Grid Content */}
         <main className="p-6 flex-1 max-w-7xl w-full mx-auto space-y-6">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <div>
-              <h1 className="text-2xl font-bold text-slate-900">Counsellor Dashboard</h1>
-              <p className="text-slate-500 text-sm mt-0.5">Overview of assigned students and upcoming sessions analytics dashboard metrics.</p>
-            </div>
-            <button className="bg-primary-600 hover:bg-primary-700 text-white font-medium px-4 py-2.5 rounded-xl shadow-soft text-sm flex items-center gap-2 transition duration-300">
-              <ArrowRight className="h-4 w-4" /> Schedule Session
-            </button>
-          </div>
-
-          {/* Stats Cards Grid layout */}
-          <div className="grid md:grid-cols-3 gap-6">
-            {stats.map((m, i) => (
-              <div className="card-premium flex items-center justify-between bg-white" key={i}>
-                <div>
-                  <p className="text-xs text-slate-500 font-medium">{m.t}</p>
-                  <p className="text-2xl font-bold text-slate-900 mt-1">{m.v}</p>
-                  <p className="text-xs text-slate-400 mt-1">{m.d}</p>
-                </div>
-                <div className={`p-3.5 rounded-2xl ${m.c} flex items-center justify-center`}>
-                  <m.i className="h-6 w-6" />
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-6">
-             {/* Assigned Students List */}
-             <div className="card-premium bg-white">
-                <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-50">
-                   <h3 className="font-bold text-slate-800">Assigned Verification Pending</h3>
-                   <button className="text-primary-600 font-semibold text-xs flex items-center gap-1">View All <ChevronRight className="h-3 w-3" /></button>
-                </div>
-                <div className="space-y-4">
-                   {studentsList.map((u, i) => (
-                      <div className="p-4 border border-slate-100 rounded-xl hover:bg-slate-50 duration-150 flex items-center justify-between" key={i}>
-                         <div>
-                            <p className="font-bold text-slate-800 text-sm">{u.n}</p>
-                            <p className="text-xs text-slate-500">{u.m}</p>
-                         </div>
-                         <span className={`px-2.5 py-1 rounded-lg text-xs font-bold ${u.status === 'Completed' ? 'bg-green-50 text-green-600' : 'bg-primary-50 text-primary-600'}`}>{u.s}</span>
+          {(() => {
+            switch (activeTab) {
+              case 'overview':
+                return (
+                  <>
+                    <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                      <div>
+                        <h1 className="text-2xl font-bold text-slate-900">Counsellor Dashboard</h1>
+                        <p className="text-slate-500 text-sm mt-0.5">Overview of assigned students and upcoming sessions analytics dashboard metrics.</p>
                       </div>
-                   ))}
-                </div>
-             </div>
+                      <button className="bg-primary-600 hover:bg-primary-700 text-white font-medium px-4 py-2.5 rounded-xl shadow-soft text-sm flex items-center gap-2 transition duration-300">
+                        <ArrowRight className="h-4 w-4" /> Schedule Session
+                      </button>
+                    </div>
 
-             {/* Live Session Calendar/Support quick view trigger framing layouts sets */}
-             <div className="card-premium bg-white">
-                <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-50">
-                   <h3 className="font-bold text-slate-800">Upcoming Live Counselling Updates</h3>
-                </div>
-                <div className="flex flex-col items-center justify-center text-center py-12">
-                   <div className="bg-primary-50 p-4 rounded-2xl text-primary-600 mb-4">
-                      <Clock className="h-8 w-8" />
-                   </div>
-                   <h4 className="font-bold text-slate-800 text-sm">No Live Session At This Moment</h4>
-                   <p className="text-xs text-slate-400 mt-1 max-w-xs">Loads schedule filters parameters dashboards metric updates framing configurations properly framing thresholds configurations setups.</p>
-                </div>
-             </div>
-          </div>
+                    {/* Stats Cards Grid layout */}
+                    <div className="grid md:grid-cols-3 gap-6">
+                      {stats.map((m, i) => (
+                        <div className="card-premium flex items-center justify-between bg-white" key={i}>
+                          <div>
+                            <p className="text-xs text-slate-500 font-medium">{m.t}</p>
+                            <p className="text-2xl font-bold text-slate-900 mt-1">{m.v}</p>
+                            <p className="text-xs text-slate-400 mt-1">{m.d}</p>
+                          </div>
+                          <div className={`p-3.5 rounded-2xl ${m.c} flex items-center justify-center`}>
+                            <m.i className="h-6 w-6" />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
 
+                    <div className="grid md:grid-cols-2 gap-6">
+                       {/* Assigned Students List */}
+                       <div className="card-premium bg-white">
+                          <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-50">
+                             <h3 className="font-bold text-slate-800">Assigned Verification Pending</h3>
+                             <button className="text-primary-600 font-semibold text-xs flex items-center gap-1">View All <ChevronRight className="h-3 w-3" /></button>
+                          </div>
+                          <div className="space-y-4">
+                             {studentsList.map((u, i) => (
+                                <div className="p-4 border border-slate-100 rounded-xl hover:bg-slate-50 duration-150 flex items-center justify-between" key={i}>
+                                   <div>
+                                      <p className="font-bold text-slate-800 text-sm">{u.n}</p>
+                                      <p className="text-xs text-slate-500">{u.m}</p>
+                                   </div>
+                                   <span className={`px-2.5 py-1 rounded-lg text-xs font-bold ${u.status === 'Completed' ? 'bg-green-50 text-green-600' : 'bg-primary-50 text-primary-600'}`}>{u.s}</span>
+                                </div>
+                             ))}
+                          </div>
+                       </div>
+
+                       {/* Live Session Calendar/Support quick view trigger framing layouts sets */}
+                       <div className="card-premium bg-white">
+                          <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-50">
+                             <h3 className="font-bold text-slate-800">Upcoming Live Counselling Updates</h3>
+                          </div>
+                          <div className="flex flex-col items-center justify-center text-center py-12">
+                             <div className="bg-primary-50 p-4 rounded-2xl text-primary-600 mb-4">
+                                <Clock className="h-8 w-8" />
+                             </div>
+                             <h4 className="font-bold text-slate-800 text-sm">No Live Session At This Moment</h4>
+                             <p className="text-xs text-slate-400 mt-1 max-w-xs">Loads schedule filters parameters dashboards metric updates framing configurations properly framing thresholds configurations setups.</p>
+                          </div>
+                       </div>
+                    </div>
+                  </>
+                );
+              default:
+                return (
+                  <div className="card-premium flex flex-col items-center justify-center text-center py-20 bg-white/50 backdrop-blur-sm shadow-sm mt-4">
+                      <div className="bg-primary-50 p-4 rounded-2xl text-primary-600 mb-4 animate-bounce">
+                         <Compass className="h-8 w-8" />
+                      </div>
+                      <h2 className="text-2xl font-bold text-slate-900 capitalize">{activeTab.replace('-', ' ')}</h2>
+                      <p className="text-slate-500 max-w-sm mt-2 text-sm leading-relaxed">This module is currently under active development. Complete functionality will be available in the upcoming release framing configurations.</p>
+                      <button className="bg-primary-600 hover:bg-primary-700 text-white font-medium px-5 py-2.5 rounded-xl mt-6 transition duration-300 text-sm shadow-soft">
+                        View Mock Data Mode
+                      </button>
+                  </div>
+                );
+            }
+          })()}
         </main>
       </div>
     </div>
