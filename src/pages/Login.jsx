@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { GraduationCap, Lock, Mail, Users, ShieldAlert, UserCheck } from 'lucide-react';
+import { GraduationCap, Lock, Mail, LogIn, Users, ShieldAlert, UserCheck } from 'lucide-react';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -77,28 +77,20 @@ export default function Login() {
            <span className="bg-white px-3 text-xs text-slate-400 font-bold absolute">DEMO LOGINS (ONE CLICK)</span>
         </div>
 
-        <div className="space-y-3">
+        <div className="space-y-4 mt-6">
           <button 
             onClick={() => handleRoleLogin('student')}
-            className="w-full bg-primary-600 text-white font-bold py-3 rounded-xl shadow-soft text-sm flex items-center justify-center gap-2 hover:bg-primary-700 duration-200"
+            className="w-full bg-primary-600 text-white font-bold py-3.5 rounded-xl shadow-soft text-sm flex items-center justify-center gap-2 hover:bg-primary-700 duration-200"
           >
-            <UserCheck className="h-4 w-4" /> Login as Student
+            <LogIn className="h-4 w-4" /> Sign In
           </button>
           
-          <div className="grid grid-cols-2 gap-3">
-             <button 
-               onClick={() => handleRoleLogin('counsellor')}
-               className="bg-white border border-slate-100 text-slate-700 font-bold py-3 rounded-xl shadow-sm text-sm flex items-center justify-center gap-2 hover:bg-slate-50 duration-200"
-             >
-               <Users className="h-4 w-4 text-slate-500" /> Counsellor
-             </button>
-             <button 
-               onClick={() => handleRoleLogin('admin')}
-               className="bg-white border border-slate-100 text-slate-700 font-bold py-3 rounded-xl shadow-sm text-sm flex items-center justify-center gap-2 hover:bg-slate-50 duration-200"
-             >
-               <ShieldAlert className="h-4 w-4 text-slate-500" /> Admin
-             </button>
-          </div>
+          <button 
+            onClick={() => handleRoleLogin('student')}
+            className="w-full bg-slate-50 border border-slate-100 text-slate-700 font-bold py-3.5 rounded-xl text-sm flex items-center justify-center gap-2 hover:bg-slate-100 duration-200"
+          >
+             Login as Student demo
+          </button>
         </div>
 
         <div className="text-center mt-6 text-xs text-slate-400 font-semibold">
