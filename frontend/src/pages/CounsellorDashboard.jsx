@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer 
@@ -8,7 +8,8 @@ import {
   Menu, X, CheckSquare, Clock, ArrowRight, Settings, LogOut, ChevronRight, Award, Users, ShieldAlert, BookOpen, MessageSquare
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { userApi, sessionApi } from '../api';
+import { userApi, sessionApi, chatApi } from '../api';
+import { useRef } from 'react';
 
 export default function CounsellorDashboard() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -47,6 +48,63 @@ export default function CounsellorDashboard() {
   const [studentsList, setStudentsList] = useState([]);
   const [sessionsList, setSessionsList] = useState([]);
   const [counsellorProfile, setCounsellorProfile] = useState({ name: 'Neha Gupta', email: 'neha@educounsel.com', phone: '+91 9876543211', specialized: 'IIT/NEET Guidance', id: null });
+  const [passwordData, setPasswordData] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+
+  // Chat state
+  const [selectedChatStudent, setSelectedChatStudent] = useState(null);
+  const [chatMessages, setChatMessages] = useState([]);
+  const [chatInput, setChatInput] = useState('');
+  const [isSendingMsg, setIsSendingMsg] = useState(false);
+  const chatEndRef = useRef(null);
+
+  const handleUpdateProfile = async () => {
+    try {
+      setIsUpdating(true);
+      await userApi.update(counsellorProfile.id, {
+        name: counsellorProfile.name,
+        email: counsellorProfile.email,
+        phone: counsellorProfile.phone,
+        specialized: counsellorProfile.specialized
+      });
+      const userStr = localStorage.getItem('user');
+      if (userStr) {
+        const userObj = JSON.parse(userStr);
+        localStorage.setItem('user', JSON.stringify({ ...userObj, name: counsellorProfile.name, email: counsellorProfile.email, phone: counsellorProfile.phone, specialized: counsellorProfile.specialized }));
+      }
+      setCustomAlert({ isOpen: true, t: 'Success', m: 'Profile updated successfully!', tp: 'success' });
+    } catch (e) {
+      setCustomAlert({ isOpen: true, t: 'Error', m: e.response?.data?.message || 'Failed to update profile.', tp: 'error' });
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleUpdatePassword = async () => {
+    if (!passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword) {
+      setCustomAlert({ isOpen: true, t: 'Warning', m: 'Please fill all password fields.', tp: 'warning' });
+      return;
+    }
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      setCustomAlert({ isOpen: true, t: 'Warning', m: 'New passwords do not match.', tp: 'warning' });
+      return;
+    }
+    try {
+      setIsUpdatingPassword(true);
+      await userApi.changePassword({ 
+        id: counsellorProfile.id,
+        currentPassword: passwordData.currentPassword, 
+        newPassword: passwordData.newPassword 
+      });
+      setCustomAlert({ isOpen: true, t: 'Success', m: 'Password updated successfully!', tp: 'success' });
+      setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+    } catch (e) {
+      setCustomAlert({ isOpen: true, t: 'Error', m: e.response?.data?.error || 'Failed to update password.', tp: 'error' });
+    } finally {
+      setIsUpdatingPassword(false);
+    }
+  };
 
   useEffect(() => {
     const loadCounsellorData = async () => {
@@ -86,6 +144,44 @@ export default function CounsellorDashboard() {
     };
     loadCounsellorData();
   }, []);
+
+  // Load chat messages when a student is selected
+  useEffect(() => {
+    if (!selectedChatStudent || !counsellorProfile.id) return;
+    chatApi.getMessages(counsellorProfile.id, selectedChatStudent.id)
+      .then(res => {
+        setChatMessages(res.data);
+        setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+      })
+      .catch(() => setChatMessages([]));
+  }, [selectedChatStudent, counsellorProfile.id]);
+
+  // Auto-select first student for chat when students are loaded
+  useEffect(() => {
+    if (studentsList.length > 0 && !selectedChatStudent) {
+      setSelectedChatStudent(studentsList[0]);
+    }
+  }, [studentsList]);
+
+  const handleSendMessage = async () => {
+    if (!chatInput.trim() || !selectedChatStudent || !counsellorProfile.id) return;
+    const content = chatInput.trim();
+    setChatInput('');
+    setIsSendingMsg(true);
+    try {
+      const res = await chatApi.sendMessage({
+        senderId: counsellorProfile.id,
+        receiverId: selectedChatStudent.id,
+        content
+      });
+      setChatMessages(prev => [...prev, res.data]);
+      setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
+    } catch (e) {
+      console.error('Send message failed:', e);
+    } finally {
+      setIsSendingMsg(false);
+    }
+  };
 
   return (
     <div className="flex h-screen bg-[#f3f6fc] overflow-hidden">
@@ -210,9 +306,15 @@ export default function CounsellorDashboard() {
                <p className="font-bold text-slate-700 text-sm mt-4 tracking-wide animate-pulse">Loading {activeTab.replace('-', ' ')}...</p>
              </motion.div>
           ) : (
-             (() => {
-               switch (activeTab) {
-                 case 'overview':
+             <motion.div
+               key={activeTab}
+               initial={{ opacity: 0, y: 30 }}
+               animate={{ opacity: 1, y: 0 }}
+               transition={{ duration: 0.5, ease: "easeOut" }}
+             >
+               {(() => {
+                 switch (activeTab) {
+                   case 'overview':
                    return (
                      <>
                        <div className="flex flex-col md:flex-row items-center justify-between gap-4">
@@ -222,7 +324,7 @@ export default function CounsellorDashboard() {
                          </div>
                           <button 
                             onClick={() => {
-                               setSessionFormData({ student: studentsList[0].n, date: '', time: '', topic: 'Document Verification', url: '' });
+                               setSessionFormData({ student: studentsList[0]?.n, date: '', time: '', topic: 'Document Verification', url: '' });
                                setIsScheduleModalOpen(true);
                             }}
                             className="bg-primary-600 hover:bg-primary-700 text-white font-medium px-4 py-2.5 rounded-xl shadow-soft text-sm flex items-center gap-2 cursor-pointer duration-300"
@@ -379,28 +481,91 @@ export default function CounsellorDashboard() {
                          <h1 className="text-2xl font-bold text-slate-900">Support Chat</h1>
                          <p className="text-slate-500 text-sm mt-0.5">Quickly respond and guide student doubts directly.</p>
                        </div>
-                       <div className="grid grid-cols-12 gap-6 h-[500px] border border-slate-100 rounded-2xl overflow-hidden bg-white shadow-soft">
-                         <div className="col-span-4 border-r border-slate-50 flex flex-col">
-                            {studentsList.map((s, i) => (
-                               <div className={`p-4 border-b border-slate-50 cursor-pointer ${i === 0 ? 'bg-primary-50' : ''}`} key={i}>
-                                 <p className="font-bold text-slate-800 text-sm">{s.n}</p>
-                                 <p className="text-xs text-slate-400 truncate">Can you check my college list?</p>
-                               </div>
+                        <div className="grid grid-cols-12 gap-0 h-[520px] border border-slate-100 rounded-2xl overflow-hidden bg-white shadow-soft">
+                          {/* Student list */}
+                          <div className="col-span-4 border-r border-slate-100 flex flex-col overflow-y-auto">
+                            <div className="p-4 border-b border-slate-100 bg-slate-50">
+                              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Students</p>
+                            </div>
+                            {studentsList.length === 0 ? (
+                              <div className="flex-1 flex items-center justify-center text-xs text-slate-400 p-4">No students assigned</div>
+                            ) : studentsList.map((s, i) => (
+                              <div
+                                key={i}
+                                onClick={() => { setSelectedChatStudent(s); setChatMessages([]); }}
+                                className={`p-4 border-b border-slate-50 cursor-pointer hover:bg-primary-50 transition-colors ${selectedChatStudent?.id === s.id ? "bg-primary-50 border-l-4 border-l-primary-500" : ""}`}
+                              >
+                                <div className="flex items-center gap-3">
+                                  <div className="w-8 h-8 rounded-full bg-primary-100 text-primary-600 flex items-center justify-center font-bold text-xs flex-shrink-0">
+                                    {s.n?.charAt(0)}
+                                  </div>
+                                  <div className="min-w-0">
+                                    <p className="font-bold text-slate-800 text-sm truncate">{s.n}</p>
+                                    <p className="text-xs text-slate-400 truncate">{s.e}</p>
+                                  </div>
+                                </div>
+                              </div>
                             ))}
-                         </div>
-                         <div className="col-span-8 flex flex-col">
-                           <div className="p-4 border-b border-slate-50 font-bold text-slate-800">{studentsList[0].n}</div>
-                           <div className="flex-1 p-4 bg-slate-50 space-y-3 overflow-y-auto">
-                              <div className="bg-white p-3 rounded-xl max-w-xs text-sm text-slate-700">Hello Neha, I am confused about choices filling for JEE Main. How to list them correctly?</div>
-                              <div className="bg-primary-600 text-white p-3 rounded-xl max-w-xs text-sm self-end ml-auto">Hi {studentsList[0].n.split(' ')[0]}, sure we can schedule a Session to arrange them perfectly framing choices list setups framing correctly.</div>
-                           </div>
-                           <div className="p-4 border-t border-slate-50 flex gap-2">
-                              <input type="text" className="flex-1 px-4 py-2 border rounded-xl focus:outline-none focus:border-primary-600 text-sm" placeholder="Write messages..." />
-                              <button className="bg-primary-600 text-white px-4 rounded-xl font-semibold text-sm">Send</button>
-                           </div>
-                         </div>
-                       </div>
-                     </div>
+                          </div>
+                          {/* Chat panel */}
+                          <div className="col-span-8 flex flex-col">
+                            {selectedChatStudent ? (
+                              <>
+                                <div className="p-4 border-b border-slate-100 bg-white flex items-center gap-3">
+                                  <div className="w-8 h-8 rounded-full bg-primary-100 text-primary-600 flex items-center justify-center font-bold text-xs">
+                                    {selectedChatStudent.n?.charAt(0)}
+                                  </div>
+                                  <div>
+                                    <p className="font-bold text-sm text-slate-800">{selectedChatStudent.n}</p>
+                                    <p className="text-xs text-slate-400">{selectedChatStudent.e}</p>
+                                  </div>
+                                </div>
+                                <div className="flex-1 p-4 bg-slate-50 space-y-3 overflow-y-auto">
+                                  {chatMessages.length === 0 ? (
+                                    <div className="flex items-center justify-center h-full">
+                                      <p className="text-sm text-slate-400">No messages yet. Say hello!</p>
+                                    </div>
+                                  ) : chatMessages.map((msg, i) => {
+                                    const isMine = msg.senderId === counsellorProfile.id;
+                                    return (
+                                      <div key={i} className={`flex ${isMine ? "justify-end" : "justify-start"}`}>
+                                        <div className={`p-3 rounded-2xl max-w-xs text-sm ${isMine ? "bg-primary-600 text-white rounded-br-none" : "bg-white text-slate-700 rounded-bl-none shadow-soft border border-slate-100"}`}>
+                                          {msg.content}
+                                          <p className={`text-[10px] mt-1 ${isMine ? "text-primary-200" : "text-slate-400"}`}>
+                                            {new Date(msg.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                                          </p>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                  <div ref={chatEndRef} />
+                                </div>
+                                <div className="p-4 border-t border-slate-100 flex gap-2 bg-white">
+                                  <input
+                                    type="text"
+                                    value={chatInput}
+                                    onChange={e => setChatInput(e.target.value)}
+                                    onKeyDown={e => e.key === "Enter" && !e.shiftKey && handleSendMessage()}
+                                    className="flex-1 px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 text-sm"
+                                    placeholder="Write a message..."
+                                  />
+                                  <button
+                                    onClick={handleSendMessage}
+                                    disabled={isSendingMsg || !chatInput.trim()}
+                                    className="bg-primary-600 hover:bg-primary-700 disabled:opacity-50 text-white px-5 rounded-xl font-semibold text-sm transition-colors"
+                                  >
+                                    {isSendingMsg ? "..." : "Send"}
+                                  </button>
+                                </div>
+                              </>
+                            ) : (
+                              <div className="flex-1 flex items-center justify-center text-slate-400 text-sm">
+                                Select a student to start chatting
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
                    );
                  case 'settings':
                    return (
@@ -416,22 +581,22 @@ export default function CounsellorDashboard() {
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                            <div className="space-y-1">
                              <label className="text-xs font-semibold text-slate-600">Full Name</label>
-                             <input type="text" defaultValue="Neha Gupta" className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500 transition font-medium" />
+                             <input type="text" value={counsellorProfile.name || ''} onChange={(e) => setCounsellorProfile({...counsellorProfile, name: e.target.value})} className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500 transition font-medium" />
                            </div>
                            <div className="space-y-1">
                              <label className="text-xs font-semibold text-slate-600">Expertise / Specialization</label>
-                             <input type="text" defaultValue="IIT counselling / NEET Guidance" className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500 transition font-medium" />
+                             <input type="text" value={counsellorProfile.specialized || ''} onChange={(e) => setCounsellorProfile({...counsellorProfile, specialized: e.target.value})} className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500 transition font-medium" />
                            </div>
                            <div className="space-y-1">
                              <label className="text-xs font-semibold text-slate-600">Email Address</label>
-                             <input type="email" defaultValue="neha@educounsel.com" className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500 transition font-medium" />
+                             <input type="email" value={counsellorProfile.email || ''} onChange={(e) => setCounsellorProfile({...counsellorProfile, email: e.target.value})} className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500 transition font-medium" />
                            </div>
                            <div className="space-y-1">
                              <label className="text-xs font-semibold text-slate-600">Phone Number</label>
-                             <input type="text" defaultValue="+91 9876543211" className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500 transition font-medium" />
+                             <input type="text" value={counsellorProfile.phone || ''} onChange={(e) => setCounsellorProfile({...counsellorProfile, phone: e.target.value})} className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500 transition font-medium" />
                            </div>
                          </div>
-                         <button className="bg-primary-600 hover:bg-primary-700 text-white font-semibold px-5 py-2.5 rounded-xl text-xs shadow-soft cursor-pointer duration-200">Update Profile</button>
+                         <button onClick={handleUpdateProfile} disabled={isUpdating} className={`bg-primary-600 hover:bg-primary-700 text-white font-semibold px-5 py-2.5 rounded-xl text-xs shadow-soft cursor-pointer duration-200 ${isUpdating ? 'opacity-70 cursor-not-allowed' : ''}`}>{isUpdating ? 'Updating...' : 'Update Profile'}</button>
                        </div>
 
                        {/* Security Settings Card */}
@@ -440,25 +605,26 @@ export default function CounsellorDashboard() {
                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                            <div className="space-y-1">
                              <label className="text-xs font-semibold text-slate-600">Current Password</label>
-                             <input type="password" placeholder="••••••••" className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500" />
+                             <input type="password" value={passwordData.currentPassword} onChange={(e) => setPasswordData({...passwordData, currentPassword: e.target.value})} placeholder="••••••••" className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500" />
                            </div>
                            <div className="space-y-1">
                              <label className="text-xs font-semibold text-slate-600">New Password</label>
-                             <input type="password" placeholder="Set new" className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500" />
+                             <input type="password" value={passwordData.newPassword} onChange={(e) => setPasswordData({...passwordData, newPassword: e.target.value})} placeholder="Set new" className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500" />
                            </div>
                            <div className="space-y-1">
                              <label className="text-xs font-semibold text-slate-600">Confirm Password</label>
-                             <input type="password" placeholder="Confirm new" className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500" />
+                             <input type="password" value={passwordData.confirmPassword} onChange={(e) => setPasswordData({...passwordData, confirmPassword: e.target.value})} placeholder="Confirm new" className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500" />
                            </div>
                          </div>
-                         <button className="bg-primary-600 hover:bg-primary-700 text-white font-semibold px-5 py-2.5 rounded-xl text-xs shadow-soft cursor-pointer duration-200">Update Password</button>
+                         <button onClick={handleUpdatePassword} disabled={isUpdatingPassword} className={`bg-primary-600 hover:bg-primary-700 text-white font-semibold px-5 py-2.5 rounded-xl text-xs shadow-soft cursor-pointer duration-200 ${isUpdatingPassword ? 'opacity-70 cursor-not-allowed' : ''}`}>{isUpdatingPassword ? 'Updating...' : 'Update Password'}</button>
                        </div>
                      </div>
                    );
                  default:
                    return null;
                }
-             })()
+             })()}
+             </motion.div>
           )}
 
            {/* Add / Edit Schedule Session Modal Dialog Overlay triggers setup layouts accurately sets */}

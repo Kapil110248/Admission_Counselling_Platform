@@ -61,4 +61,9 @@ export const sessionApi = {
   getAll: (params) => apiClient.get('/sessions', { params }),
 };
 
+export const chatApi = {
+  getMessages: (user1Id, user2Id) => apiClient.get(`/chat/${user1Id}/${user2Id}`),
+  sendMessage: (data) => apiClient.post('/chat', data),
+};
+
 export default apiClient;

@@ -18,6 +18,7 @@ export default function Login() {
         if (!name || !email || !password) { alert('Please fill all fields for registration'); return; }
         const res = await authApi.register({ name, email, password });
         localStorage.setItem('token', res.data.token);
+        if (res.data.user) localStorage.setItem('user', JSON.stringify(res.data.user));
         alert('Account Created Successfully!');
         navigate('/student-dashboard');
         return;
@@ -25,6 +26,7 @@ export default function Login() {
 
       const res = await authApi.login({ email, password });
       localStorage.setItem('token', res.data.token);
+      if (res.data.user) localStorage.setItem('user', JSON.stringify(res.data.user));
       
       const role = res.data.user.role; // e.g., 'Admin', 'Counsellor', 'Student'
       if (role === 'Admin') navigate('/admin-dashboard');

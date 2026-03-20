@@ -32,12 +32,15 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', server: 'Running node-express Prisma datasets frameworks threshold models framed fully sets properly.' });
 });
 
+const chatRoute = require('./routes/chatRoute');
+
 // Mounted Endpoints routes setting trigger configurations overlays
 app.use('/api/auth', authRoute);
 app.use('/api/users', userRoute);
 app.use('/api/exams', examRoute);
 app.use('/api/colleges', collegeRoute);
 app.use('/api/sessions', sessionRoute);
+app.use('/api/chat', chatRoute);
 
 app.listen(PORT, () => {
   console.log(`Server running safely on http://localhost:${PORT}`);
