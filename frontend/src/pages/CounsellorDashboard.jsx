@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer 
@@ -10,6 +10,7 @@ import {
 import { Link } from 'react-router-dom';
 import { userApi, sessionApi, chatApi } from '../api';
 import { useRef } from 'react';
+import Preloader from '../components/Preloader';
 
 export default function CounsellorDashboard() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -106,55 +107,75 @@ export default function CounsellorDashboard() {
     }
   };
 
+  // Track which tabs have already loaded data
+  const loadedTabs = useRef(new Set());
+
+  // Load profile ONCE at mount
   useEffect(() => {
-    const loadCounsellorData = async () => {
-       try {
-          // Get logged in counsellor from localStorage
-          const userStr = localStorage.getItem('user');
-          if (!userStr) return;
-          const userObj = JSON.parse(userStr);
-
-          // Load counsellor profile
-          const userRes = await userApi.getProfile(userObj.id);
-          setCounsellorProfile(userRes.data);
-
-          // Load all students
-          const resUsers = await userApi.getAll();
-          const mapped = resUsers.data.filter(u => u.role === 'Student').map(u => ({
-             id: u.id, n: u.name, e: u.email, m: u.specialized || 'JEE Main (IIT Delhi)', s: 'Session pending', status: 'Scheduled', rank: 'AIR 4510', doc: u.isVerified ? 'Approved' : 'Pending'
-          }));
-          setStudentsList(mapped);
-          setSessionFormData(prev => ({ ...prev, student: mapped[0]?.n || '' }));
-
-          // Load sessions for this counsellor
-          const resSessions = await sessionApi.getAll({ counsellorId: userObj.id });
-          console.log('Sessions from API:', resSessions.data);
-          const mappedS = resSessions.data.map(s => ({
-             id: s.id, studentId: s.studentId, n: s.student?.name || "Student", m: s.topic, s: `${s.date} ${s.time}`, url: s.url, status: s.status
-          }));
-          setSessionsList(mappedS);
-
-          // Update stats with live data
-          setStats([
-             { t: 'Assigned Students', v: String(mapped.length || 0), d: 'Total students registered', i: Users, c: 'bg-primary-50 text-primary-600' },
-             { t: 'Sessions Scheduled', v: String(mappedS.length), d: `Upcoming: ${mappedS.length}`, i: Clock, c: 'bg-green-50 text-green-600' },
-             { t: 'Query Support Requests', v: '0', d: 'Needs review response', i: MessageSquare, c: 'bg-amber-50 text-amber-600' }
-          ]);
-       } catch (e) { console.error('Dashboard load error:', e); }
+    const loadProfile = async () => {
+      try {
+        const userStr = localStorage.getItem('user');
+        if (!userStr) return;
+        const userObj = JSON.parse(userStr);
+        const userRes = await userApi.getProfile(userObj.id);
+        setCounsellorProfile(userRes.data);
+      } catch (e) { console.error('Profile load error:', e); }
     };
-    loadCounsellorData();
+    loadProfile();
   }, []);
 
-  // Load chat messages when a student is selected
+  // Per-tab lazy loader
   useEffect(() => {
-    if (!selectedChatStudent || !counsellorProfile.id) return;
-    chatApi.getMessages(counsellorProfile.id, selectedChatStudent.id)
-      .then(res => {
-        setChatMessages(res.data);
-        setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
-      })
-      .catch(() => setChatMessages([]));
-  }, [selectedChatStudent, counsellorProfile.id]);
+    const tab = activeTab;
+    if (loadedTabs.current.has(tab)) return;
+
+    const fetchTabData = async () => {
+      const userStr = localStorage.getItem('user');
+      const userObj = userStr ? JSON.parse(userStr) : null;
+      if (!userObj) return;
+      try {
+        if (tab === 'overview' || tab === 'students' || tab === 'chat') {
+          if (studentsList.length === 0) {
+            const resUsers = await userApi.getAll();
+            const mapped = resUsers.data.filter(u => u.role === 'Student').map(u => ({
+              id: u.id, n: u.name, e: u.email,
+              m: u.specialized || 'JEE Main (IIT Delhi)',
+              s: 'Session pending', status: 'Scheduled',
+              rank: 'AIR 4510', doc: u.isVerified ? 'Approved' : 'Pending'
+            }));
+            setStudentsList(mapped);
+            setSessionFormData(prev => ({ ...prev, student: mapped[0]?.n || '' }));
+            if (tab === 'overview') {
+              const resSessions = await sessionApi.getAll({ counsellorId: userObj.id });
+              const mappedS = resSessions.data.map(s => ({
+                id: s.id, studentId: s.studentId,
+                n: s.student?.name || 'Student',
+                m: s.topic, s: `${s.date} ${s.time}`, url: s.url, status: s.status
+              }));
+              setSessionsList(mappedS);
+              setStats([
+                { t: 'Assigned Students', v: String(mapped.length || 0), d: 'Total students registered', i: Users, c: 'bg-primary-50 text-primary-600' },
+                { t: 'Sessions Scheduled', v: String(mappedS.length), d: `Upcoming: ${mappedS.length}`, i: Clock, c: 'bg-green-50 text-green-600' },
+                { t: 'Query Support Requests', v: '0', d: 'Needs review response', i: MessageSquare, c: 'bg-amber-50 text-amber-600' }
+              ]);
+            }
+          }
+        } else if (tab === 'sessions') {
+          if (sessionsList.length === 0) {
+            const resSessions = await sessionApi.getAll({ counsellorId: userObj.id });
+            const mappedS = resSessions.data.map(s => ({
+              id: s.id, studentId: s.studentId,
+              n: s.student?.name || 'Student',
+              m: s.topic, s: `${s.date} ${s.time}`, url: s.url, status: s.status
+            }));
+            setSessionsList(mappedS);
+          }
+        }
+        loadedTabs.current.add(tab);
+      } catch (e) { console.error(`Counsellor tab [${tab}] load error:`, e); }
+    };
+    fetchTabData();
+  }, [activeTab]);
 
   // Auto-select first student for chat when students are loaded
   useEffect(() => {
@@ -286,25 +307,7 @@ export default function CounsellorDashboard() {
         {/* Dashboard Grid Content */}
         <main className="p-6 flex-1 max-w-7xl w-full mx-auto space-y-6">
           {isLoading ? (
-             <motion.div 
-               initial={{ opacity: 0 }} 
-               animate={{ opacity: 1 }} 
-               className="flex-1 flex flex-col items-center justify-center py-32 bg-white/50 backdrop-blur-sm rounded-3xl border border-slate-100 shadow-soft"
-             >
-               <div className="relative flex items-center justify-center">
-                 <motion.div 
-                   animate={{ scale: [1, 1.4, 1], opacity: [0.4, 0.15, 0.4] }} 
-                   transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }} 
-                   className="absolute w-16 h-16 rounded-full bg-primary-200" 
-                 />
-                 <motion.div 
-                   animate={{ rotate: 360 }} 
-                   transition={{ duration: 1, repeat: Infinity, ease: 'linear' }} 
-                   className="w-10 h-10 border-[3px] border-slate-200 border-t-primary-600 rounded-full" 
-                 />
-               </div>
-               <p className="font-bold text-slate-700 text-sm mt-4 tracking-wide animate-pulse">Loading {activeTab.replace('-', ' ')}...</p>
-             </motion.div>
+             <Preloader />
           ) : (
              <motion.div
                key={activeTab}

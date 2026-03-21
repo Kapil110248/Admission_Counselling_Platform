@@ -7,6 +7,7 @@ const userRoute = require('./routes/userRoute');
 const examRoute = require('./routes/examRoute');
 const sessionRoute = require('./routes/sessionRoute');
 const collegeRoute = require('./routes/collegeRoute');
+const scholarshipRoute = require('./routes/scholarshipRoute');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -41,6 +42,7 @@ app.use('/api/exams', examRoute);
 app.use('/api/colleges', collegeRoute);
 app.use('/api/sessions', sessionRoute);
 app.use('/api/chat', chatRoute);
+app.use('/api/scholarships', scholarshipRoute);
 
 app.listen(PORT, () => {
   console.log(`Server running safely on http://localhost:${PORT}`);

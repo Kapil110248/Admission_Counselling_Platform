@@ -61,6 +61,13 @@ export const sessionApi = {
   getAll: (params) => apiClient.get('/sessions', { params }),
 };
 
+export const scholarshipApi = {
+  getAll: () => apiClient.get('/scholarships'),
+  create: (data) => apiClient.post('/scholarships', data),
+  update: (id, data) => apiClient.put(`/scholarships/${id}`, data),
+  delete: (id) => apiClient.delete(`/scholarships/${id}`),
+};
+
 export const chatApi = {
   getMessages: (user1Id, user2Id) => apiClient.get(`/chat/${user1Id}/${user2Id}`),
   sendMessage: (data) => apiClient.post('/chat', data),

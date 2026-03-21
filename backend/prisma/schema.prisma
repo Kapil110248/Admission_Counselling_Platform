@@ -85,3 +85,13 @@ model Session {
   status       String   @default("Scheduled") // "Scheduled", "Completed", "Cancelled"
   createdAt    DateTime @default(now())
 }
+
+model Scholarship {
+  id           Int      @id @default(autoincrement())
+  name         String
+  description  String
+  amount       String   // "Up to 100% Waiver", "₹50,000"
+  eligibility  String?
+  officialUrl  String?
+  createdAt    DateTime @default(now())
+}
