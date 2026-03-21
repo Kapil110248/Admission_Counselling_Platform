@@ -1,0 +1,74 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL") // format: mysql://root:password@localhost:3306/admission_counselling
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  name         String
+  email        String   @unique
+  password     String
+  role         String   @default("Student") // "Admin", "Student", "Counsellor"
+  isVerified   Boolean  @default(false)
+  phone        String?
+  specialized  String?  // for Counselors (Medical, Engineering, General)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  studentSessions    Session[] @relation("StudentSessions")
+  counsellorSessions Session[] @relation("CounsellorSessions")
+}
+
+model Exam {
+  id           Int      @id @default(autoincrement())
+  name         String
+  board        String   @default("NTA")
+  date         String   // String fit with frontend date presets
+  applicants   String?  // "1.2M+"
+  stream       String?  // "Engineering", "Medical", etc.
+  officialUrl  String?
+  isActive     Boolean  @default(true)
+  cutoffs      Cutoff[]
+}
+
+model College {
+  id           Int      @id @default(autoincrement())
+  name         String
+  location     String
+  nirfRank     String?
+  fees         String?
+  avgPackage   String?
+  website      String?
+  cutoffs      Cutoff[]
+}
+
+model Cutoff {
+  id           Int      @id @default(autoincrement())
+  collegeId    Int
+  examId       Int
+  college      College  @relation(fields: [collegeId], references: [id])
+  exam         Exam     @relation(fields: [examId], references: [id])
+  branch       String   // "Computer Science", "Electrical"
+  category     String   // "General", "OBC", "SC"
+  closingRank  Int
+  round        Int      @default(1)
+  quota        String   @default("All India")
+  year         Int      @default(2025)
+}
+
+model Session {
+  id           Int      @id @default(autoincrement())
+  studentId    Int
+  counsellorId Int
+  student      User     @relation("StudentSessions", fields: [studentId], references: [id])
+  counsellor   User     @relation("CounsellorSessions", fields: [counsellorId], references: [id])
+  topic        String
+  date         String
+  time         String
+  url          String
+  status       String   @default("Scheduled") // "Scheduled", "Completed", "Cancelled"
+  createdAt    DateTime @default(now())
+}
