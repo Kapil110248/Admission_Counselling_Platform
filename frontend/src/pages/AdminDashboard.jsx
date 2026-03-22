@@ -82,7 +82,7 @@ export default function AdminDashboard() {
 
   const [isCutoffModalOpen, setIsCutoffModalOpen] = useState(false);
   const [cutoffFormData, setCutoffFormData] = useState({ collegeId: '', examId: '', branch: '', category: 'General', closingRank: '', round: '1', quota: 'All India', year: '2025' });
-  
+
   // Scholarship State Logic
   const [scholarshipsList, setScholarshipsList] = useState([]);
   const [isScholarshipModalOpen, setIsScholarshipModalOpen] = useState(false);
@@ -101,23 +101,23 @@ export default function AdminDashboard() {
 
   const fetchAdminProfile = async () => {
     try {
-        const userStr = localStorage.getItem('user');
-        if (!userStr) return;
-        const u = JSON.parse(userStr);
-        const res = await userApi.getProfile(u.id);
-        setAdminProfile(res.data);
+      const userStr = localStorage.getItem('user');
+      if (!userStr) return;
+      const u = JSON.parse(userStr);
+      const res = await userApi.getProfile(u.id);
+      setAdminProfile(res.data);
     } catch (e) { console.error(e); }
   };
 
   const fetchStats = async () => { try { const res = await userApi.getStats(); console.log('STATS_API_SUCCESS:', res.data); setStatsData(res.data); } catch (e) { console.error('STATS_API_ERR:', e); } };
 
   useEffect(() => {
-     const init = async () => {
-       await fetchStats();
-       await fetchAdminProfile();
-       setPageLoading(false);
-     }
-     init();
+    const init = async () => {
+      await fetchStats();
+      await fetchAdminProfile();
+      setPageLoading(false);
+    }
+    init();
   }, []);
 
   useEffect(() => {
@@ -128,7 +128,7 @@ export default function AdminDashboard() {
     if (activeTab === 'scholarships') fetchScholarships();
     if (activeTab === 'packages') fetchPackages();
 
-              
+
 
     if (activeTab === 'settings') fetchAdminProfile();
     if (activeTab === 'overview') { fetchStats(); fetchUsers(); fetchExams(); fetchColleges(); fetchCutoffs(); fetchScholarships(); }
@@ -196,7 +196,7 @@ export default function AdminDashboard() {
               onClick={() => setIsSidebarOpen(false)}
               className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100] md:hidden"
             />
-            
+
             <motion.div
               initial={{ x: '-100%', opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
@@ -277,8 +277,8 @@ export default function AdminDashboard() {
                       <p className="text-xs text-slate-400 text-center py-4">No new notifications.</p>
                     ) : (
                       notificationsList.map((n) => (
-                        <div 
-                          key={n.id} 
+                        <div
+                          key={n.id}
                           onClick={() => !n.isRead && handleMarkRead(n.id)}
                           className={`p-2.5 border border-slate-50 rounded-xl transition duration-150 ${n.isRead ? 'opacity-60 bg-white' : 'bg-slate-50 hover:bg-slate-100 cursor-pointer shadow-soft'}`}
                         >
@@ -395,11 +395,11 @@ export default function AdminDashboard() {
                         <tbody className="divide-y divide-slate-100">
                           {usersList.filter(u => !u.isVerified && u.role === 'Student').slice(0, 3).map((u, i) => (
                             <tr className="hover:bg-slate-50 duration-150" key={i}>
-                               <td className="py-4 px-4 whitespace-nowrap"><div><p className="font-bold text-slate-800 text-xs">{u.name}</p><p className="text-[10px] text-slate-500">{u.email}</p></div></td>
-                               <td className="py-4 px-4 text-slate-600 font-medium text-xs whitespace-nowrap">N/A</td>
-                               <td className="py-4 px-4 text-slate-600 font-medium text-xs whitespace-nowrap">{u.role}</td>
-                               <td className="py-4 px-4 whitespace-nowrap">
-<span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-50 text-amber-600">Pending</span></td>
+                              <td className="py-4 px-4 whitespace-nowrap"><div><p className="font-bold text-slate-800 text-xs">{u.name}</p><p className="text-[10px] text-slate-500">{u.email}</p></div></td>
+                              <td className="py-4 px-4 text-slate-600 font-medium text-xs whitespace-nowrap">N/A</td>
+                              <td className="py-4 px-4 text-slate-600 font-medium text-xs whitespace-nowrap">{u.role}</td>
+                              <td className="py-4 px-4 whitespace-nowrap">
+                                <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-50 text-amber-600">Pending</span></td>
                             </tr>
                           ))}
                           {usersList.filter(u => !u.isVerified && u.role === 'Student').length === 0 && (
@@ -654,7 +654,7 @@ export default function AdminDashboard() {
                             <p className="text-xs text-slate-500">{exam.board}</p>
                           </div>
                           <div className="flex items-center gap-1.5">
-                            <span 
+                            <span
                               onClick={async () => {
                                 try { await examApi.update(exam.id, { isActive: !exam.isActive }); fetchExams(); } catch (e) { console.error(e); }
                               }}
@@ -662,7 +662,7 @@ export default function AdminDashboard() {
                             >
                               {exam.isActive ? 'Active' : 'Inactive'}
                             </span>
-                            <button 
+                            <button
                               onClick={() => {
                                 setConfirmDialog({
                                   isOpen: true, t: 'Delete Exam', m: `Are you sure you want to permanently delete the exam metadata for ${exam.name}?`,
@@ -926,57 +926,57 @@ export default function AdminDashboard() {
               {activeTab === 'cutoffs' && (
                 <>
                   <div className="space-y-6">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <h1 className="text-2xl font-bold text-slate-900">Cutoff Data</h1>
-                      <p className="text-slate-500 text-sm mt-0.5">Previous years opening and closing ranks.</p>
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <h1 className="text-2xl font-bold text-slate-900">Cutoff Data</h1>
+                        <p className="text-slate-500 text-sm mt-0.5">Previous years opening and closing ranks.</p>
+                      </div>
+                      <button onClick={() => { setCutoffFormData({ collegeId: collegesList[0]?.id || '', examId: examsList[0]?.id || '', branch: '', category: 'General', closingRank: '', round: '1', quota: 'All India', year: '2025' }); setIsCutoffModalOpen(true); fetchColleges(); fetchExams(); }} className="bg-primary-600 hover:bg-primary-700 text-white font-medium px-4 py-2.5 rounded-xl text-sm flex items-center gap-2 cursor-pointer duration-150">
+                        <Award className="h-4 w-4" /> Add Cutoff
+                      </button>
                     </div>
-                    <button onClick={() => { setCutoffFormData({ collegeId: collegesList[0]?.id || '', examId: examsList[0]?.id || '', branch: '', category: 'General', closingRank: '', round: '1', quota: 'All India', year: '2025' }); setIsCutoffModalOpen(true); fetchColleges(); fetchExams(); }} className="bg-primary-600 hover:bg-primary-700 text-white font-medium px-4 py-2.5 rounded-xl text-sm flex items-center gap-2 cursor-pointer duration-150">
-                      <Award className="h-4 w-4" /> Add Cutoff
-                    </button>
-                  </div>
-                  <div className="card-premium bg-white p-0 overflow-hidden border border-slate-100">
-                    <div className="overflow-x-auto custom-scrollbar shadow-inner">
-                      <table className="w-full text-sm min-w-[900px]">
-                        <thead>
-                          <tr className="border-b border-slate-100">
-                            <th className="text-left font-semibold text-slate-400 py-3 px-4 whitespace-nowrap">College</th>
-                            <th className="text-left font-semibold text-slate-400 py-3 px-4 whitespace-nowrap">Branch</th>
-                            <th className="text-left font-semibold text-slate-400 py-3 px-4 whitespace-nowrap">Category</th>
-                            <th className="text-left font-semibold text-slate-400 py-3 px-4 whitespace-nowrap">Rank</th>
-                            <th className="text-left font-semibold text-slate-400 py-3 px-4 whitespace-nowrap">Round</th>
-                            <th className="text-left font-semibold text-slate-400 py-3 px-4 whitespace-nowrap">Quota</th>
-                            <th className="text-left font-semibold text-slate-400 py-3 px-4 whitespace-nowrap">Year</th>
-                            <th className="text-right font-semibold text-slate-400 py-3 px-4 whitespace-nowrap pr-4">Actions</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100">
-                          {cutoffsList.map((d, i) => (
-                            <tr className="hover:bg-slate-50 duration-150" key={i}>
-                              <td className="py-4 px-4 font-bold text-slate-800 whitespace-nowrap">{d.college?.name || 'N/A'}</td>
-                              <td className="py-4 px-4 text-slate-600 font-medium whitespace-nowrap">{d.branch}</td>
-                              <td className="py-4 px-4 text-slate-500 whitespace-nowrap">{d.category}</td>
-                              <td className="py-4 px-4 font-bold text-slate-700 whitespace-nowrap">{d.closingRank}</td>
-                              <td className="py-4 px-4 text-slate-500 font-medium whitespace-nowrap">{d.round || '1'}</td>
-                              <td className="py-4 px-4 text-slate-500 text-xs whitespace-nowrap">{d.quota || 'All India'}</td>
-                              <td className="py-4 px-4 text-slate-500 whitespace-nowrap">{d.year || '2025'}</td>
-                              <td className="py-4 text-right pr-4">
-                                <div className="flex items-center justify-end gap-1">
-                                  <button onClick={() => { setCutoffFormData({ ...d, collegeId: d.collegeId.toString(), examId: d.examId.toString() }); setIsCutoffModalOpen(true); }} className="hover:bg-slate-100 p-1.5 rounded-lg text-slate-600 cursor-pointer duration-150">
-                                    <Edit3 className="h-4 w-4" />
-                                  </button>
-                                  <button onClick={() => { setConfirmDialog({ isOpen: true, t: 'Delete Cutoff', m: `Are you sure you want to delete the cutoff record for ${d.branch}?`, onConfirm: async () => { try { await collegeApi.deleteCutoff(d.id); fetchCutoffs(); setCustomAlert({ isOpen: true, t: 'Deleted', m: 'Record removed successfully!', tp: 'success' }); } catch (e) { console.error(e); } } }); }} className="hover:bg-red-50 p-1.5 rounded-lg text-red-500 cursor-pointer duration-150">
-                                    <Trash2 className="h-4 w-4" />
-                                  </button>
-                                </div>
-                              </td>
+                    <div className="card-premium bg-white p-0 overflow-hidden border border-slate-100">
+                      <div className="overflow-x-auto custom-scrollbar shadow-inner">
+                        <table className="w-full text-sm min-w-[900px]">
+                          <thead>
+                            <tr className="border-b border-slate-100">
+                              <th className="text-left font-semibold text-slate-400 py-3 px-4 whitespace-nowrap">College</th>
+                              <th className="text-left font-semibold text-slate-400 py-3 px-4 whitespace-nowrap">Branch</th>
+                              <th className="text-left font-semibold text-slate-400 py-3 px-4 whitespace-nowrap">Category</th>
+                              <th className="text-left font-semibold text-slate-400 py-3 px-4 whitespace-nowrap">Rank</th>
+                              <th className="text-left font-semibold text-slate-400 py-3 px-4 whitespace-nowrap">Round</th>
+                              <th className="text-left font-semibold text-slate-400 py-3 px-4 whitespace-nowrap">Quota</th>
+                              <th className="text-left font-semibold text-slate-400 py-3 px-4 whitespace-nowrap">Year</th>
+                              <th className="text-right font-semibold text-slate-400 py-3 px-4 whitespace-nowrap pr-4">Actions</th>
                             </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100">
+                            {cutoffsList.map((d, i) => (
+                              <tr className="hover:bg-slate-50 duration-150" key={i}>
+                                <td className="py-4 px-4 font-bold text-slate-800 whitespace-nowrap">{d.college?.name || 'N/A'}</td>
+                                <td className="py-4 px-4 text-slate-600 font-medium whitespace-nowrap">{d.branch}</td>
+                                <td className="py-4 px-4 text-slate-500 whitespace-nowrap">{d.category}</td>
+                                <td className="py-4 px-4 font-bold text-slate-700 whitespace-nowrap">{d.closingRank}</td>
+                                <td className="py-4 px-4 text-slate-500 font-medium whitespace-nowrap">{d.round || '1'}</td>
+                                <td className="py-4 px-4 text-slate-500 text-xs whitespace-nowrap">{d.quota || 'All India'}</td>
+                                <td className="py-4 px-4 text-slate-500 whitespace-nowrap">{d.year || '2025'}</td>
+                                <td className="py-4 text-right pr-4">
+                                  <div className="flex items-center justify-end gap-1">
+                                    <button onClick={() => { setCutoffFormData({ ...d, collegeId: d.collegeId.toString(), examId: d.examId.toString() }); setIsCutoffModalOpen(true); }} className="hover:bg-slate-100 p-1.5 rounded-lg text-slate-600 cursor-pointer duration-150">
+                                      <Edit3 className="h-4 w-4" />
+                                    </button>
+                                    <button onClick={() => { setConfirmDialog({ isOpen: true, t: 'Delete Cutoff', m: `Are you sure you want to delete the cutoff record for ${d.branch}?`, onConfirm: async () => { try { await collegeApi.deleteCutoff(d.id); fetchCutoffs(); setCustomAlert({ isOpen: true, t: 'Deleted', m: 'Record removed successfully!', tp: 'success' }); } catch (e) { console.error(e); } } }); }} className="hover:bg-red-50 p-1.5 rounded-lg text-red-500 cursor-pointer duration-150">
+                                      <Trash2 className="h-4 w-4" />
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
                   </div>
-                </div>
 
                   {isCutoffModalOpen && (
                     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -989,19 +989,19 @@ export default function AdminDashboard() {
                               {collegesList.map(c => <option value={c.id} key={c.id}>{c.name}</option>)}
                             </select>
                           </div>
-                          
+
                           <div>
                             <label className="text-xs font-semibold text-slate-600">Exam</label>
                             <select value={cutoffFormData.examId} onChange={e => setCutoffFormData({ ...cutoffFormData, examId: e.target.value })} className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm mt-1">
                               {examsList.map(e => <option value={e.id} key={e.id}>{e.name}</option>)}
                             </select>
                           </div>
-                          
+
                           <div>
                             <label className="text-xs font-semibold text-slate-600">Branch/Course</label>
                             <input type="text" value={cutoffFormData.branch} onChange={e => setCutoffFormData({ ...cutoffFormData, branch: e.target.value })} placeholder="e.g., Computer Science" className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm mt-1" />
                           </div>
-                          
+
                           <div className="grid grid-cols-2 gap-3">
                             <div>
                               <label className="text-xs font-semibold text-slate-600">Category</label>
@@ -1045,24 +1045,24 @@ export default function AdminDashboard() {
                         <div className="flex gap-2 justify-end pt-4 border-t border-slate-100 mt-2">
                           <button onClick={() => setIsCutoffModalOpen(false)} className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-5 py-2.5 rounded-xl text-xs font-semibold duration-150">Cancel</button>
                           <button onClick={async () => {
-                              try {
-                                 const payload = { ...cutoffFormData, collegeId: cutoffFormData.collegeId || collegesList[0]?.id, examId: cutoffFormData.examId || examsList[0]?.id };
-                                 if (cutoffFormData.id) {
-                                   await collegeApi.updateCutoff(cutoffFormData.id, payload);
-                                 } else {
-                                   await collegeApi.createCutoff(payload);
-                                 }
-                                 fetchCutoffs();
-                                 setIsCutoffModalOpen(false);
-                                 setCustomAlert({ isOpen: true, t: 'Success', m: `Cutoff entry ${cutoffFormData.id ? 'updated' : 'added'} successfully!`, tp: 'success' });
-                              } catch (e) { console.error(e); }
+                            try {
+                              const payload = { ...cutoffFormData, collegeId: cutoffFormData.collegeId || collegesList[0]?.id, examId: cutoffFormData.examId || examsList[0]?.id };
+                              if (cutoffFormData.id) {
+                                await collegeApi.updateCutoff(cutoffFormData.id, payload);
+                              } else {
+                                await collegeApi.createCutoff(payload);
+                              }
+                              fetchCutoffs();
+                              setIsCutoffModalOpen(false);
+                              setCustomAlert({ isOpen: true, t: 'Success', m: `Cutoff entry ${cutoffFormData.id ? 'updated' : 'added'} successfully!`, tp: 'success' });
+                            } catch (e) { console.error(e); }
                           }} className="bg-primary-600 hover:bg-primary-700 text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow-soft duration-150">{cutoffFormData.id ? 'Update' : 'Save'} Record</button>
-|                        </div>
+                          |                        </div>
                       </motion.div>
                     </div>
                   )}
-              </>
-            )}
+                </>
+              )}
 
               {activeTab === 'scholarships' && (
                 <div className="space-y-6">
@@ -1377,16 +1377,16 @@ export default function AdminDashboard() {
                           <div className="flex gap-2 justify-end pt-3 border-t border-slate-100">
                             <button onClick={() => setIsPackageModalOpen(false)} className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-5 py-2.5 rounded-xl text-xs font-semibold">Cancel</button>
                             <button onClick={async () => {
-                                if (!packageFormData.name || !packageFormData.price) return showAlert('Fill name & price');
-                                try {
-                                  const list = packageFormData.benefits.split(',').map(b => b.trim()).filter(Boolean);
-                                  const payload = { ...packageFormData, benefits: list };
-                                  if (currentPackageEdit) await packageApi.update(currentPackageEdit.id, payload);
-                                  else await packageApi.create(payload);
-                                  fetchPackages();
-                                  setIsPackageModalOpen(false);
-                                  setCustomAlert({ isOpen: true, t: 'Success', m: 'Package saved!', tp: 'success' });
-                                } catch (e) { console.error(e); }
+                              if (!packageFormData.name || !packageFormData.price) return showAlert('Fill name & price');
+                              try {
+                                const list = packageFormData.benefits.split(',').map(b => b.trim()).filter(Boolean);
+                                const payload = { ...packageFormData, benefits: list };
+                                if (currentPackageEdit) await packageApi.update(currentPackageEdit.id, payload);
+                                else await packageApi.create(payload);
+                                fetchPackages();
+                                setIsPackageModalOpen(false);
+                                setCustomAlert({ isOpen: true, t: 'Success', m: 'Package saved!', tp: 'success' });
+                              } catch (e) { console.error(e); }
                             }} className="bg-primary-600 hover:bg-primary-700 text-white px-5 py-2.5 rounded-xl text-xs font-bold">Save</button>
                           </div>
                         </motion.div>
@@ -1425,11 +1425,11 @@ export default function AdminDashboard() {
                       </div>
                     </div>
                     <button onClick={async () => {
-                        try {
-                           await userApi.update(adminProfile.id, adminProfile);
-                           setCustomAlert({ isOpen: true, t: 'Updated', m: 'Profile updated successfully!', tp: 'success' });
-                           fetchAdminProfile();
-                        } catch (e) { console.error(e); }
+                      try {
+                        await userApi.update(adminProfile.id, adminProfile);
+                        setCustomAlert({ isOpen: true, t: 'Updated', m: 'Profile updated successfully!', tp: 'success' });
+                        fetchAdminProfile();
+                      } catch (e) { console.error(e); }
                     }} className="bg-primary-600 hover:bg-primary-700 text-white font-semibold px-5 py-2.5 rounded-xl text-xs shadow-soft cursor-pointer duration-200">Save Changes</button>
                   </div>
 
@@ -1451,17 +1451,17 @@ export default function AdminDashboard() {
                       </div>
                     </div>
                     <button onClick={async () => {
-                        if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-                          setCustomAlert({ isOpen: true, t: 'Error', m: 'Passwords do not match!', tp: 'error' });
-                          return;
-                        }
-                        try {
-                           await userApi.changePassword({ id: adminProfile.id, currentPassword: passwordForm.currentPassword, newPassword: passwordForm.newPassword });
-                           setCustomAlert({ isOpen: true, t: 'Success', m: 'Password updated successfully!', tp: 'success' });
-                           setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
-                        } catch (e) { 
-                           setCustomAlert({ isOpen: true, t: 'Error', m: e.response?.data?.error || 'Failed to update!', tp: 'error' });
-                        }
+                      if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+                        setCustomAlert({ isOpen: true, t: 'Error', m: 'Passwords do not match!', tp: 'error' });
+                        return;
+                      }
+                      try {
+                        await userApi.changePassword({ id: adminProfile.id, currentPassword: passwordForm.currentPassword, newPassword: passwordForm.newPassword });
+                        setCustomAlert({ isOpen: true, t: 'Success', m: 'Password updated successfully!', tp: 'success' });
+                        setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+                      } catch (e) {
+                        setCustomAlert({ isOpen: true, t: 'Error', m: e.response?.data?.error || 'Failed to update!', tp: 'error' });
+                      }
                     }} className="bg-primary-600 hover:bg-primary-700 text-white font-semibold px-5 py-2.5 rounded-xl text-xs shadow-soft cursor-pointer duration-200">Update Password</button>
                   </div>
 
@@ -1530,33 +1530,33 @@ export default function AdminDashboard() {
             </div>
           )}
         </AnimatePresence>
-          
+
         <AnimatePresence>
           {isLogoutModalOpen && (
-              <div className="fixed inset-0 bg-black/40 backdrop-blur-md z-[999] flex items-center justify-center p-4">
-                <motion.div initial={{ opacity: 0, scale: 0.85, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.8, y: 20 }} className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl text-center">
-                  <div className="p-4 rounded-full mx-auto w-16 h-16 bg-red-50 flex items-center justify-center mb-4">
-                    <LogOut className="h-8 w-8 text-red-500 animate-pulse" />
-                  </div>
-                  <h3 className="font-bold text-lg text-slate-800 mb-2">Ready to leave?</h3>
-                  <p className="text-slate-500 text-sm">You are about to log out from your session. You'll need to sign in again to access your dashboard.</p>
-                  
-                  <div className="pt-6 grid grid-cols-2 gap-3">
-                    <button onClick={() => setIsLogoutModalOpen(false)} className="w-full bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold py-3 rounded-xl text-sm duration-150">Cancel</button>
-                    <button 
-                      onClick={() => {
-                        localStorage.removeItem('user');
-                        localStorage.removeItem('token');
-                        navigate('/login', { replace: true });
-                      }} 
-                      className="w-full bg-red-500 hover:bg-red-600 text-white font-semibold py-3 rounded-xl text-sm shadow-soft duration-150 flex items-center justify-center gap-2"
-                    >
-                      <LogOut className="h-4 w-4" /> Log Out
-                    </button>
-                  </div>
-                </motion.div>
-              </div>
-            )}
+            <div className="fixed inset-0 bg-black/40 backdrop-blur-md z-[999] flex items-center justify-center p-4">
+              <motion.div initial={{ opacity: 0, scale: 0.85, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.8, y: 20 }} className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl text-center">
+                <div className="p-4 rounded-full mx-auto w-16 h-16 bg-red-50 flex items-center justify-center mb-4">
+                  <LogOut className="h-8 w-8 text-red-500 animate-pulse" />
+                </div>
+                <h3 className="font-bold text-lg text-slate-800 mb-2">Ready to leave?</h3>
+                <p className="text-slate-500 text-sm">You are about to log out from your session. You'll need to sign in again to access your dashboard.</p>
+
+                <div className="pt-6 grid grid-cols-2 gap-3">
+                  <button onClick={() => setIsLogoutModalOpen(false)} className="w-full bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold py-3 rounded-xl text-sm duration-150">Cancel</button>
+                  <button
+                    onClick={() => {
+                      localStorage.removeItem('user');
+                      localStorage.removeItem('token');
+                      navigate('/login', { replace: true });
+                    }}
+                    className="w-full bg-red-500 hover:bg-red-600 text-white font-semibold py-3 rounded-xl text-sm shadow-soft duration-150 flex items-center justify-center gap-2"
+                  >
+                    <LogOut className="h-4 w-4" /> Log Out
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          )}
         </AnimatePresence>
       </div>
     </div>

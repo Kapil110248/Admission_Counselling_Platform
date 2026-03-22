@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer 
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
-import { 
-  LayoutDashboard, Compass, Star, GraduationCap, Bell, Search, 
+import {
+  LayoutDashboard, Compass, Star, GraduationCap, Bell, Search,
   Menu, X, CheckSquare, Clock, ArrowRight, Settings, LogOut, ChevronRight, Award, Users, ShieldAlert, BookOpen, MessageSquare, ClipboardList
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -24,7 +24,7 @@ export default function CounsellorDashboard() {
   const [notifications, setNotifications] = useState([]);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const [customAlert, setCustomAlert] = useState({ isOpen: false, t: '', m: '', tp: '' });
-  
+
   // Schedule Session State Logic
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
   const [sessionFormData, setSessionFormData] = useState({ student: '', date: '', time: '', topic: 'Document Verification', url: '' });
@@ -145,10 +145,10 @@ export default function CounsellorDashboard() {
     }
     try {
       setIsUpdatingPassword(true);
-      await userApi.changePassword({ 
+      await userApi.changePassword({
         id: counsellorProfile.id,
-        currentPassword: passwordData.currentPassword, 
-        newPassword: passwordData.newPassword 
+        currentPassword: passwordData.currentPassword,
+        newPassword: passwordData.newPassword
       });
       setCustomAlert({ isOpen: true, t: 'Success', m: 'Password updated successfully!', tp: 'success' });
       setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
@@ -185,7 +185,7 @@ export default function CounsellorDashboard() {
     if (!counsellorProfile.id) return;
     try {
       await notificationApi.markAllRead(counsellorProfile.id);
-      setNotifications(prev => prev.map(n => ({...n, read: true, isRead: true})));
+      setNotifications(prev => prev.map(n => ({ ...n, read: true, isRead: true })));
     } catch (e) { console.error('Failed to mark read', e); }
   };
 
@@ -286,19 +286,19 @@ export default function CounsellorDashboard() {
           setChatMessages(prev => [...prev, data]);
           setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
         } else {
-             // Dynamically append new chatting student to list triggers overlay flaws triggers overlay flawlessly
-             userApi.getProfile(data.senderId).then(res => {
-                const u = res.data;
-                setStudentsList(prev => {
-                   if (prev.find(s => s.id === u.id)) return prev;
-                   return [...prev, {
-                      id: u.id, n: u.name, e: u.email,
-                      m: u.specialized || 'General Counselling',
-                      s: 'New Message', status: 'Chat Contact',
-                      rank: 'N/A', doc: u.isVerified ? 'Approved' : 'Pending'
-                   }];
-                });
-             }).catch(console.error);
+          // Dynamically append new chatting student to list triggers overlay flaws triggers overlay flawlessly
+          userApi.getProfile(data.senderId).then(res => {
+            const u = res.data;
+            setStudentsList(prev => {
+              if (prev.find(s => s.id === u.id)) return prev;
+              return [...prev, {
+                id: u.id, n: u.name, e: u.email,
+                m: u.specialized || 'General Counselling',
+                s: 'New Message', status: 'Chat Contact',
+                rank: 'N/A', doc: u.isVerified ? 'Approved' : 'Pending'
+              }];
+            });
+          }).catch(console.error);
         }
       });
 
@@ -341,7 +341,7 @@ export default function CounsellorDashboard() {
               onClick={() => setIsSidebarOpen(false)}
               className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100] md:hidden"
             />
-            
+
             <motion.div
               initial={{ x: '-100%', opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
@@ -370,13 +370,13 @@ export default function CounsellorDashboard() {
                 ))}
               </nav>
 
-            <div className="p-4 border-t border-slate-50 space-y-1">
-              <button onClick={() => setIsLogoutModalOpen(true)} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm text-red-600 hover:bg-red-50"><LogOut className="h-5 w-5" /> Logout</button>
-            </div>
-          </motion.div>
-        </>
-      )}
-    </AnimatePresence>
+              <div className="p-4 border-t border-slate-50 space-y-1">
+                <button onClick={() => setIsLogoutModalOpen(true)} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm text-red-600 hover:bg-red-50"><LogOut className="h-5 w-5" /> Logout</button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
       {/* Main content Area */}
       <div className="flex-1 flex flex-col h-full overflow-y-auto overflow-x-hidden">
@@ -391,11 +391,11 @@ export default function CounsellorDashboard() {
               <input type="text" placeholder="Search assigned students..." className="bg-transparent border-0 focus:outline-none text-sm w-full" />
             </div>
           </div>
-          
+
           <div className="flex items-center gap-4">
             <div className="relative">
-              <button 
-                onClick={() => setIsNotificationsOpen(!isNotificationsOpen)} 
+              <button
+                onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
                 className="bg-slate-50 p-2 rounded-xl text-slate-500 relative hover:bg-slate-100 duration-200"
               >
                 <Bell className="h-5 w-5" />
@@ -404,36 +404,36 @@ export default function CounsellorDashboard() {
                 )}
               </button>
               {isNotificationsOpen && (
-                 <motion.div 
-                    initial={{ opacity: 0, y: 10, scale: 0.95 }} 
-                    animate={{ opacity: 1, y: 0, scale: 1 }} 
-                    className="absolute right-0 mt-2 w-80 bg-white border border-slate-100 rounded-2xl shadow-xl z-30 p-4 space-y-2"
-                 >
-                    <div className="flex justify-between items-center border-b border-slate-50 pb-2">
-                       <h4 className="font-bold text-slate-800 text-sm">Notifications</h4>
-                       <span onClick={handleMarkAllRead} className="text-xs text-primary-600 font-semibold cursor-pointer">Mark all read</span>
-                    </div>
-                    <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
-                      {notifications.length === 0 ? (
-                        <p className="text-xs text-slate-400 text-center py-6">No new notifications.</p>
-                      ) : (
-                        notifications.map((n, i) => (
-                          <div key={n.id || i} className={`p-3 border rounded-xl hover:bg-slate-50 duration-150 cursor-pointer ${n.isRead || n.read ? 'border-slate-50 bg-white' : 'border-primary-100 bg-primary-50/30'}`}>
-                            <p className={`font-bold text-xs ${n.isRead || n.read ? 'text-slate-700' : 'text-primary-800'}`}>{n.title || n.type || 'Notification'}</p>
-                            <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">{n.message}</p>
-                            <p className="text-[9px] text-slate-400 mt-2 font-medium">{new Date(n.createdAt || Date.now()).toLocaleString()}</p>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                 </motion.div>
+                <motion.div
+                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  className="absolute right-0 mt-2 w-80 bg-white border border-slate-100 rounded-2xl shadow-xl z-30 p-4 space-y-2"
+                >
+                  <div className="flex justify-between items-center border-b border-slate-50 pb-2">
+                    <h4 className="font-bold text-slate-800 text-sm">Notifications</h4>
+                    <span onClick={handleMarkAllRead} className="text-xs text-primary-600 font-semibold cursor-pointer">Mark all read</span>
+                  </div>
+                  <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                    {notifications.length === 0 ? (
+                      <p className="text-xs text-slate-400 text-center py-6">No new notifications.</p>
+                    ) : (
+                      notifications.map((n, i) => (
+                        <div key={n.id || i} className={`p-3 border rounded-xl hover:bg-slate-50 duration-150 cursor-pointer ${n.isRead || n.read ? 'border-slate-50 bg-white' : 'border-primary-100 bg-primary-50/30'}`}>
+                          <p className={`font-bold text-xs ${n.isRead || n.read ? 'text-slate-700' : 'text-primary-800'}`}>{n.title || n.type || 'Notification'}</p>
+                          <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">{n.message}</p>
+                          <p className="text-[9px] text-slate-400 mt-2 font-medium">{new Date(n.createdAt || Date.now()).toLocaleString()}</p>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </motion.div>
               )}
             </div>
 
             <div onClick={() => handleTabChange('settings')} className="flex items-center gap-2 cursor-pointer hover:bg-slate-50 px-2 py-1 rounded-xl duration-200">
-              <img 
-                src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" 
-                alt="Profile" 
+              <img
+                src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
+                alt="Profile"
                 className="w-10 h-10 rounded-full object-cover border-2 border-primary-100"
               />
               <div className="hidden md:block text-left">
@@ -447,251 +447,250 @@ export default function CounsellorDashboard() {
         {/* Dashboard Grid Content */}
         <main className="p-6 flex-1 max-w-7xl w-full mx-auto space-y-6">
           {isLoading ? (
-             <Preloader />
+            <Preloader />
           ) : (
-             <motion.div
-               key={activeTab}
-               initial={{ opacity: 0, y: 30 }}
-               animate={{ opacity: 1, y: 0 }}
-               transition={{ duration: 0.5, ease: "easeOut" }}
-             >
-               {(() => {
-                 switch (activeTab) {
-                   case 'overview':
-                   return (
-                     <>
-                       <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-                         <div>
-                           <h1 className="text-2xl font-bold text-slate-900">Counsellor Dashboard</h1>
-                           <p className="text-slate-500 text-sm mt-0.5">Overview of assigned students and upcoming sessions analytics dashboard metrics.</p>
-                         </div>
-                          <button 
+            <motion.div
+              key={activeTab}
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, ease: "easeOut" }}
+            >
+              {(() => {
+                switch (activeTab) {
+                  case 'overview':
+                    return (
+                      <>
+                        <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                          <div>
+                            <h1 className="text-2xl font-bold text-slate-900">Counsellor Dashboard</h1>
+                            <p className="text-slate-500 text-sm mt-0.5">Overview of assigned students and upcoming sessions analytics dashboard metrics.</p>
+                          </div>
+                          <button
                             onClick={() => {
-                               setSessionFormData({ student: studentsList[0]?.n, date: '', time: '', topic: 'Document Verification', url: '' });
-                               setIsScheduleModalOpen(true);
+                              setSessionFormData({ student: studentsList[0]?.n, date: '', time: '', topic: 'Document Verification', url: '' });
+                              setIsScheduleModalOpen(true);
                             }}
                             className="bg-primary-600 hover:bg-primary-700 text-white font-medium px-4 py-2.5 rounded-xl shadow-soft text-sm flex items-center gap-2 cursor-pointer duration-300"
                           >
                             <ArrowRight className="h-4 w-4" /> Schedule Session
                           </button>
-                       </div>
+                        </div>
 
-                       <div className="grid md:grid-cols-3 gap-6">
-                         {stats.map((m, i) => (
-                           <div className="card-premium flex items-center justify-between bg-white" key={i}>
-                             <div>
-                               <p className="text-xs text-slate-500 font-medium">{m.t}</p>
-                               <p className="text-2xl font-bold text-slate-900 mt-1">{m.v}</p>
-                               <p className="text-xs text-slate-400 mt-1">{m.d}</p>
-                             </div>
-                             <div className={`p-3.5 rounded-2xl ${m.c} flex items-center justify-center`}>
-                               <m.i className="h-6 w-6" />
-                             </div>
-                           </div>
-                         ))}
-                       </div>
+                        <div className="grid md:grid-cols-3 gap-6">
+                          {stats.map((m, i) => (
+                            <div className="card-premium flex items-center justify-between bg-white" key={i}>
+                              <div>
+                                <p className="text-xs text-slate-500 font-medium">{m.t}</p>
+                                <p className="text-2xl font-bold text-slate-900 mt-1">{m.v}</p>
+                                <p className="text-xs text-slate-400 mt-1">{m.d}</p>
+                              </div>
+                              <div className={`p-3.5 rounded-2xl ${m.c} flex items-center justify-center`}>
+                                <m.i className="h-6 w-6" />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
 
-                       <div className="grid md:grid-cols-2 gap-6">
+                        <div className="grid md:grid-cols-2 gap-6">
                           <div className="card-premium bg-white">
-                             <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-50">
-                                <h3 className="font-bold text-slate-800">Assigned Verification Pending</h3>
-                                <button className="text-primary-600 font-semibold text-xs flex items-center gap-1">View All <ChevronRight className="h-3 w-3" /></button>
-                             </div>
-                             <div className="space-y-4">
-                                 {studentsList.filter(u => u.doc === 'Pending').map((u, i) => (
-                                   <div className="p-4 border border-slate-100 rounded-xl hover:bg-slate-50 duration-150 flex items-center justify-between" key={i}>
-                                      <div>
-                                         <p className="font-bold text-slate-800 text-sm">{u.n}</p>
-                                         <p className="text-xs text-slate-500">{u.m}</p>
-                                      </div>
-                                       <span className={`px-2.5 py-1 rounded-lg text-xs font-bold ${u.doc === 'Approved' ? 'bg-green-50 text-green-600' : 'bg-amber-50 text-amber-600'}`}>{u.doc}</span>
-                                   </div>
+                            <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-50">
+                              <h3 className="font-bold text-slate-800">Assigned Verification Pending</h3>
+                              <button className="text-primary-600 font-semibold text-xs flex items-center gap-1">View All <ChevronRight className="h-3 w-3" /></button>
+                            </div>
+                            <div className="space-y-4">
+                              {studentsList.filter(u => u.doc === 'Pending').map((u, i) => (
+                                <div className="p-4 border border-slate-100 rounded-xl hover:bg-slate-50 duration-150 flex items-center justify-between" key={i}>
+                                  <div>
+                                    <p className="font-bold text-slate-800 text-sm">{u.n}</p>
+                                    <p className="text-xs text-slate-500">{u.m}</p>
+                                  </div>
+                                  <span className={`px-2.5 py-1 rounded-lg text-xs font-bold ${u.doc === 'Approved' ? 'bg-green-50 text-green-600' : 'bg-amber-50 text-amber-600'}`}>{u.doc}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div className="card-premium bg-white">
+                            <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-50">
+                              <h3 className="font-bold text-slate-800">Upcoming Live Counselling Updates</h3>
+                            </div>
+                            {sessionsList.length > 0 ? (
+                              <div className="w-full space-y-3 px-4 pb-4">
+                                {sessionsList.slice(0, 3).map((s, i) => (
+                                  <div className="p-3.5 border border-slate-100 rounded-xl flex justify-between items-center hover:bg-slate-50 duration-150" key={i}>
+                                    <div>
+                                      <p className="font-bold text-slate-800 text-xs">{s.n}</p>
+                                      <p className="text-[10px] text-slate-400 mt-0.5">{s.m}</p>
+                                    </div>
+                                    <span className="bg-primary-50 text-primary-600 px-2.5 py-1 rounded-lg text-xs font-bold">{s.s}</span>
+                                  </div>
                                 ))}
-                             </div>
+                              </div>
+                            ) : (
+                              <div className="flex flex-col items-center justify-center text-center py-12">
+                                <div className="bg-primary-50 p-4 rounded-2xl text-primary-600 mb-4">
+                                  <Clock className="h-8 w-8" />
+                                </div>
+                                <h4 className="font-bold text-slate-800 text-sm">No Live Session At This Moment</h4>
+                                <p className="text-xs text-slate-400 mt-1 max-w-xs">Loads schedule filters parameters dashboards.</p>
+                              </div>
+                            )}
                           </div>
-
-                          <div className="card-premium bg-white">
-                             <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-50">
-                                <h3 className="font-bold text-slate-800">Upcoming Live Counselling Updates</h3>
-                             </div>
-                                 {sessionsList.length > 0 ? (
-                                    <div className="w-full space-y-3 px-4 pb-4">
-                                       {sessionsList.slice(0, 3).map((s, i) => (
-                                          <div className="p-3.5 border border-slate-100 rounded-xl flex justify-between items-center hover:bg-slate-50 duration-150" key={i}>
-                                             <div>
-                                                <p className="font-bold text-slate-800 text-xs">{s.n}</p>
-                                                <p className="text-[10px] text-slate-400 mt-0.5">{s.m}</p>
-                                             </div>
-                                             <span className="bg-primary-50 text-primary-600 px-2.5 py-1 rounded-lg text-xs font-bold">{s.s}</span>
-                                          </div>
-                                       ))}
-                                    </div>
-                                 ) : (
-                                    <div className="flex flex-col items-center justify-center text-center py-12">
-                                       <div className="bg-primary-50 p-4 rounded-2xl text-primary-600 mb-4">
-                                          <Clock className="h-8 w-8" />
-                                       </div>
-                                       <h4 className="font-bold text-slate-800 text-sm">No Live Session At This Moment</h4>
-                                       <p className="text-xs text-slate-400 mt-1 max-w-xs">Loads schedule filters parameters dashboards.</p>
-                                    </div>
-                                 )}
-                          </div>
-                       </div>
-                     </>
-                   );
-                 case 'students':
-                   return (
-                     <div className="space-y-6">
-                       <div>
-                         <h1 className="text-2xl font-bold text-slate-900">My Students</h1>
-                         <p className="text-slate-500 text-sm mt-0.5">List of students assigned to you for support counselling.</p>
-                       </div>
-                       <div className="card-premium bg-white p-0 overflow-hidden border border-slate-100">
+                        </div>
+                      </>
+                    );
+                  case 'students':
+                    return (
+                      <div className="space-y-6">
+                        <div>
+                          <h1 className="text-2xl font-bold text-slate-900">My Students</h1>
+                          <p className="text-slate-500 text-sm mt-0.5">List of students assigned to you for support counselling.</p>
+                        </div>
+                        <div className="card-premium bg-white p-0 overflow-hidden border border-slate-100">
                           <div className="overflow-x-auto custom-scrollbar shadow-inner">
-                             <table className="w-full text-sm min-w-[700px]">
-                               <thead>
-                                 <tr className="border-b border-slate-100">
-                                   <th className="text-left font-semibold text-slate-400 py-3 px-4 whitespace-nowrap">Student Name</th>
-                                   <th className="text-left font-semibold text-slate-400 py-3 px-4 whitespace-nowrap">Applied Exam</th>
-                                   <th className="text-left font-semibold text-slate-400 py-3 px-4 whitespace-nowrap">Rank/Score</th>
-                                   <th className="text-left font-semibold text-slate-400 py-3 px-4 whitespace-nowrap">Docs Status</th>
-                                   <th className="text-left font-semibold text-slate-400 py-3 px-4 whitespace-nowrap">Actions</th>
-                                 </tr>
-                               </thead>
+                            <table className="w-full text-sm min-w-[700px]">
+                              <thead>
+                                <tr className="border-b border-slate-100">
+                                  <th className="text-left font-semibold text-slate-400 py-3 px-4 whitespace-nowrap">Student Name</th>
+                                  <th className="text-left font-semibold text-slate-400 py-3 px-4 whitespace-nowrap">Applied Exam</th>
+                                  <th className="text-left font-semibold text-slate-400 py-3 px-4 whitespace-nowrap">Rank/Score</th>
+                                  <th className="text-left font-semibold text-slate-400 py-3 px-4 whitespace-nowrap">Docs Status</th>
+                                  <th className="text-left font-semibold text-slate-400 py-3 px-4 whitespace-nowrap">Actions</th>
+                                </tr>
+                              </thead>
                               <tbody className="divide-y divide-slate-100">
                                 {studentsList.map((u, i) => (
                                   <tr className="hover:bg-slate-50 duration-150" key={i}>
                                     <td className="py-4 px-4">
                                       <div className="flex items-center gap-3">
-                                         <div className="w-9 h-9 rounded-2xl bg-primary-100 flex items-center justify-center font-bold text-primary-700 text-sm shadow-soft">
-                                            {u.n ? u.n[0].toUpperCase() : 'S'}
-                                         </div>
-                                         <div>
-                                            <p className="font-bold text-slate-800">{u.n}</p>
-                                            <p className="text-xs text-slate-400 font-medium">{u.e}</p>
-                                         </div>
+                                        <div className="w-9 h-9 rounded-2xl bg-primary-100 flex items-center justify-center font-bold text-primary-700 text-sm shadow-soft">
+                                          {u.n ? u.n[0].toUpperCase() : 'S'}
+                                        </div>
+                                        <div>
+                                          <p className="font-bold text-slate-800">{u.n}</p>
+                                          <p className="text-xs text-slate-400 font-medium">{u.e}</p>
+                                        </div>
                                       </div>
                                     </td>
                                     <td className="py-4 px-4 text-slate-600 font-bold text-xs whitespace-nowrap">{u.m}</td>
                                     <td className="py-4 px-4 text-slate-700 font-bold text-xs whitespace-nowrap">{u.rank}</td>
                                     <td className="py-4 px-4 whitespace-nowrap">
-                                       <span className={`px-2.5 py-1 rounded-lg text-xs font-bold ${u.doc === 'Approved' ? 'bg-green-50 text-green-600 border border-green-100' : 'bg-amber-50 text-amber-600 border border-amber-100'}`}>{u.doc}</span>
+                                      <span className={`px-2.5 py-1 rounded-lg text-xs font-bold ${u.doc === 'Approved' ? 'bg-green-50 text-green-600 border border-green-100' : 'bg-amber-50 text-amber-600 border border-amber-100'}`}>{u.doc}</span>
                                     </td>
                                     <td className="py-4">
-                                       <button className="bg-primary-50 hover:bg-primary-100 text-primary-600 px-3 py-2 rounded-xl text-xs font-bold duration-150 cursor-pointer shadow-soft">
-                                          View Logs
-                                       </button>
+                                      <button className="bg-primary-50 hover:bg-primary-100 text-primary-600 px-3 py-2 rounded-xl text-xs font-bold duration-150 cursor-pointer shadow-soft">
+                                        View Logs
+                                      </button>
                                     </td>
                                   </tr>
                                 ))}
                               </tbody>
                             </table>
-                         </div>
-                       </div>
-                     </div>
-                   );
+                          </div>
+                        </div>
+                      </div>
+                    );
                   case 'sessions':
-                   return (
-                     <div className="space-y-6">
-                       <div>
-                         <h1 className="text-2xl font-bold text-slate-900">Sessions Schedule</h1>
-                         <p className="text-slate-500 text-sm mt-0.5">Manage and view scheduled interactions with students.</p>
-                       </div>
-                       <div className="grid gap-4">
+                    return (
+                      <div className="space-y-6">
+                        <div>
+                          <h1 className="text-2xl font-bold text-slate-900">Sessions Schedule</h1>
+                          <p className="text-slate-500 text-sm mt-0.5">Manage and view scheduled interactions with students.</p>
+                        </div>
+                        <div className="grid gap-4">
                           {sessionsList.map((u, i) => (
-                           <div className="card-premium bg-white p-6 flex flex-col md:flex-row justify-between items-center gap-4" key={i}>
-                             <div>
-                               <p className="text-xs font-semibold text-primary-600">Upcoming interaction session</p>
+                            <div className="card-premium bg-white p-6 flex flex-col md:flex-row justify-between items-center gap-4" key={i}>
+                              <div>
+                                <p className="text-xs font-semibold text-primary-600">Upcoming interaction session</p>
                                 <h3 className="font-bold text-lg text-slate-800 mt-1">{u.n}</h3>
                                 <p className="text-xs text-slate-500 mt-1">{u.m}</p>
-                             </div>
-                             <div className="flex items-center gap-3">
-                               <div className="bg-slate-50 px-4 py-2 rounded-xl text-center">
-                                 <p className="text-xs text-slate-400">Scheduled At</p>
-                                 <p className="text-sm font-bold text-slate-800">{u.s}</p>
-                               </div>
+                              </div>
+                              <div className="flex items-center gap-3">
+                                <div className="bg-slate-50 px-4 py-2 rounded-xl text-center">
+                                  <p className="text-xs text-slate-400">Scheduled At</p>
+                                  <p className="text-sm font-bold text-slate-800">{u.s}</p>
+                                </div>
                                 <button onClick={() => u.url && window.open(u.url, '_blank')} className="bg-primary-600 hover:bg-primary-700 text-white font-medium px-4 py-2 rounded-xl text-xs">Join Room</button>
-                             </div>
-                           </div>
-                         ))}
-                       </div>
-                     </div>
-                   );
-                 case 'enquiries':
-                   return (
-                     <div className="space-y-6">
-                       <div>
-                         <h1 className="text-2xl font-bold text-slate-900">Student Enquiries</h1>
-                         <p className="text-slate-500 text-sm mt-0.5">Review and respond to counselling requests from students.</p>
-                       </div>
-                       {enquiriesList.length === 0 ? (
-                         <div className="card-premium bg-white flex flex-col items-center justify-center py-20 text-center">
-                           <div className="bg-primary-50 p-4 rounded-2xl text-primary-600 mb-4">
-                             <ClipboardList className="h-8 w-8" />
-                           </div>
-                           <h3 className="font-bold text-slate-800">No Pending Enquiries</h3>
-                           <p className="text-xs text-slate-400 mt-1 max-w-xs">You have caught up with all student requests.</p>
-                         </div>
-                       ) : (
-                         <div className="space-y-4">
-                           {enquiriesList.map((enq, i) => (
-                             <div key={enq.id || i} className="card-premium bg-white">
-                               <div className="flex w-full justify-between items-start border-b border-slate-50 pb-4 mb-4">
-                                 <div className="flex items-center gap-3">
-                                   <div className="w-10 h-10 rounded-2xl bg-primary-100 flex items-center justify-center font-bold text-primary-700 text-sm shadow-soft">
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  case 'enquiries':
+                    return (
+                      <div className="space-y-6">
+                        <div>
+                          <h1 className="text-2xl font-bold text-slate-900">Student Enquiries</h1>
+                          <p className="text-slate-500 text-sm mt-0.5">Review and respond to counselling requests from students.</p>
+                        </div>
+                        {enquiriesList.length === 0 ? (
+                          <div className="card-premium bg-white flex flex-col items-center justify-center py-20 text-center">
+                            <div className="bg-primary-50 p-4 rounded-2xl text-primary-600 mb-4">
+                              <ClipboardList className="h-8 w-8" />
+                            </div>
+                            <h3 className="font-bold text-slate-800">No Pending Enquiries</h3>
+                            <p className="text-xs text-slate-400 mt-1 max-w-xs">You have caught up with all student requests.</p>
+                          </div>
+                        ) : (
+                          <div className="space-y-4">
+                            {enquiriesList.map((enq, i) => (
+                              <div key={enq.id || i} className="card-premium bg-white">
+                                <div className="flex w-full justify-between items-start border-b border-slate-50 pb-4 mb-4">
+                                  <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-2xl bg-primary-100 flex items-center justify-center font-bold text-primary-700 text-sm shadow-soft">
                                       {enq.student?.name ? enq.student.name[0].toUpperCase() : 'S'}
-                                   </div>
-                                   <div>
-                                     <h3 className="font-bold text-slate-800 text-base">{enq.student?.name || 'Student'}</h3>
-                                     <p className="text-xs text-slate-500">
-                                       Subject: <span className="font-semibold text-slate-700">{enq.subject}</span> • {new Date(enq.createdAt).toLocaleDateString()}
-                                     </p>
-                                   </div>
-                                 </div>
-                                 <span className={`px-3 py-1 rounded-xl text-xs font-bold ${
-                                   enq.status === 'Approved' ? 'bg-green-50 text-green-600' :
-                                   enq.status === 'Rejected' ? 'bg-red-50 text-red-600' :
-                                   'bg-amber-50 text-amber-600'
-                                 }`}>
-                                   {enq.status || 'Pending'}
-                                 </span>
-                               </div>
-                               <div className="mb-4">
-                                 <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Query Details</h4>
-                                 <p className="text-sm text-slate-600 bg-slate-50/50 p-3 rounded-xl border border-slate-100">{enq.query}</p>
-                               </div>
-                               
-                               {enq.status === 'Pending' && (
-                                 <div className="flex gap-3 justify-end pt-2 border-t border-slate-50">
-                                   <button 
-                                     onClick={() => handleEnquiryStatus(enq.id, 'Rejected')}
-                                     disabled={isUpdatingEnquiry}
-                                     className="bg-red-50 hover:bg-red-100 text-red-600 font-semibold px-5 py-2 rounded-xl text-xs duration-200"
-                                   >
-                                     Reject
-                                   </button>
-                                   <button 
-                                     onClick={() => handleEnquiryStatus(enq.id, 'Approved')}
-                                     disabled={isUpdatingEnquiry}
-                                     className="bg-green-500 hover:bg-green-600 text-white font-semibold px-5 py-2 rounded-xl text-xs shadow-soft duration-200"
-                                   >
-                                     Approve
-                                   </button>
-                                 </div>
-                               )}
-                             </div>
-                           ))}
-                         </div>
-                       )}
-                     </div>
-                   );
-                 case 'chat':
-                   return (
-                     <div className="space-y-6">
-                       <div>
-                         <h1 className="text-2xl font-bold text-slate-900">Support Chat</h1>
-                         <p className="text-slate-500 text-sm mt-0.5">Quickly respond and guide student doubts directly.</p>
-                       </div>
+                                    </div>
+                                    <div>
+                                      <h3 className="font-bold text-slate-800 text-base">{enq.student?.name || 'Student'}</h3>
+                                      <p className="text-xs text-slate-500">
+                                        Subject: <span className="font-semibold text-slate-700">{enq.subject}</span> • {new Date(enq.createdAt).toLocaleDateString()}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <span className={`px-3 py-1 rounded-xl text-xs font-bold ${enq.status === 'Approved' ? 'bg-green-50 text-green-600' :
+                                      enq.status === 'Rejected' ? 'bg-red-50 text-red-600' :
+                                        'bg-amber-50 text-amber-600'
+                                    }`}>
+                                    {enq.status || 'Pending'}
+                                  </span>
+                                </div>
+                                <div className="mb-4">
+                                  <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Query Details</h4>
+                                  <p className="text-sm text-slate-600 bg-slate-50/50 p-3 rounded-xl border border-slate-100">{enq.query}</p>
+                                </div>
+
+                                {enq.status === 'Pending' && (
+                                  <div className="flex gap-3 justify-end pt-2 border-t border-slate-50">
+                                    <button
+                                      onClick={() => handleEnquiryStatus(enq.id, 'Rejected')}
+                                      disabled={isUpdatingEnquiry}
+                                      className="bg-red-50 hover:bg-red-100 text-red-600 font-semibold px-5 py-2 rounded-xl text-xs duration-200"
+                                    >
+                                      Reject
+                                    </button>
+                                    <button
+                                      onClick={() => handleEnquiryStatus(enq.id, 'Approved')}
+                                      disabled={isUpdatingEnquiry}
+                                      className="bg-green-500 hover:bg-green-600 text-white font-semibold px-5 py-2 rounded-xl text-xs shadow-soft duration-200"
+                                    >
+                                      Approve
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  case 'chat':
+                    return (
+                      <div className="space-y-6">
+                        <div>
+                          <h1 className="text-2xl font-bold text-slate-900">Support Chat</h1>
+                          <p className="text-slate-500 text-sm mt-0.5">Quickly respond and guide student doubts directly.</p>
+                        </div>
                         <div className="grid grid-cols-12 gap-0 h-[520px] border border-slate-100 rounded-2xl overflow-hidden bg-white shadow-soft">
                           {/* Student list */}
                           <div className="col-span-4 border-r border-slate-100 flex flex-col overflow-y-auto">
@@ -777,159 +776,159 @@ export default function CounsellorDashboard() {
                           </div>
                         </div>
                       </div>
-                   );
-                 case 'settings':
-                   return (
-                     <div className="space-y-6 max-w-3xl">
-                       <div>
-                         <h1 className="text-2xl font-bold text-slate-900">Profile Settings</h1>
-                         <p className="text-slate-500 text-sm mt-0.5">Manage counsellor profile, contact info and security configuration settings.</p>
-                       </div>
+                    );
+                  case 'settings':
+                    return (
+                      <div className="space-y-6 max-w-3xl">
+                        <div>
+                          <h1 className="text-2xl font-bold text-slate-900">Profile Settings</h1>
+                          <p className="text-slate-500 text-sm mt-0.5">Manage counsellor profile, contact info and security configuration settings.</p>
+                        </div>
 
-                       {/* Counsellor Profile Card */}
-                       <div className="card-premium bg-white p-6 space-y-4">
-                         <h3 className="font-bold text-slate-800 border-b border-slate-50 pb-2">Professional Details</h3>
-                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                           <div className="space-y-1">
-                             <label className="text-xs font-semibold text-slate-600">Full Name</label>
-                             <input type="text" value={counsellorProfile.name || ''} onChange={(e) => setCounsellorProfile({...counsellorProfile, name: e.target.value})} className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500 transition font-medium" />
-                           </div>
-                           <div className="space-y-1">
-                             <label className="text-xs font-semibold text-slate-600">Expertise / Specialization</label>
-                             <input type="text" value={counsellorProfile.specialized || ''} onChange={(e) => setCounsellorProfile({...counsellorProfile, specialized: e.target.value})} className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500 transition font-medium" />
-                           </div>
-                           <div className="space-y-1">
-                             <label className="text-xs font-semibold text-slate-600">Email Address</label>
-                             <input type="email" value={counsellorProfile.email || ''} onChange={(e) => setCounsellorProfile({...counsellorProfile, email: e.target.value})} className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500 transition font-medium" />
-                           </div>
-                           <div className="space-y-1">
-                             <label className="text-xs font-semibold text-slate-600">Phone Number</label>
-                             <input type="text" value={counsellorProfile.phone || ''} onChange={(e) => setCounsellorProfile({...counsellorProfile, phone: e.target.value})} className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500 transition font-medium" />
-                           </div>
-                         </div>
-                         <button onClick={handleUpdateProfile} disabled={isUpdating} className={`bg-primary-600 hover:bg-primary-700 text-white font-semibold px-5 py-2.5 rounded-xl text-xs shadow-soft cursor-pointer duration-200 ${isUpdating ? 'opacity-70 cursor-not-allowed' : ''}`}>{isUpdating ? 'Updating...' : 'Update Profile'}</button>
-                       </div>
+                        {/* Counsellor Profile Card */}
+                        <div className="card-premium bg-white p-6 space-y-4">
+                          <h3 className="font-bold text-slate-800 border-b border-slate-50 pb-2">Professional Details</h3>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-1">
+                              <label className="text-xs font-semibold text-slate-600">Full Name</label>
+                              <input type="text" value={counsellorProfile.name || ''} onChange={(e) => setCounsellorProfile({ ...counsellorProfile, name: e.target.value })} className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500 transition font-medium" />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-xs font-semibold text-slate-600">Expertise / Specialization</label>
+                              <input type="text" value={counsellorProfile.specialized || ''} onChange={(e) => setCounsellorProfile({ ...counsellorProfile, specialized: e.target.value })} className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500 transition font-medium" />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-xs font-semibold text-slate-600">Email Address</label>
+                              <input type="email" value={counsellorProfile.email || ''} onChange={(e) => setCounsellorProfile({ ...counsellorProfile, email: e.target.value })} className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500 transition font-medium" />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-xs font-semibold text-slate-600">Phone Number</label>
+                              <input type="text" value={counsellorProfile.phone || ''} onChange={(e) => setCounsellorProfile({ ...counsellorProfile, phone: e.target.value })} className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500 transition font-medium" />
+                            </div>
+                          </div>
+                          <button onClick={handleUpdateProfile} disabled={isUpdating} className={`bg-primary-600 hover:bg-primary-700 text-white font-semibold px-5 py-2.5 rounded-xl text-xs shadow-soft cursor-pointer duration-200 ${isUpdating ? 'opacity-70 cursor-not-allowed' : ''}`}>{isUpdating ? 'Updating...' : 'Update Profile'}</button>
+                        </div>
 
-                       {/* Security Settings Card */}
-                       <div className="card-premium bg-white p-6 space-y-4">
-                         <h3 className="font-bold text-slate-800 border-b border-slate-50 pb-2">Security Settings</h3>
-                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                           <div className="space-y-1">
-                             <label className="text-xs font-semibold text-slate-600">Current Password</label>
-                             <input type="password" value={passwordData.currentPassword} onChange={(e) => setPasswordData({...passwordData, currentPassword: e.target.value})} placeholder="••••••••" className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500" />
-                           </div>
-                           <div className="space-y-1">
-                             <label className="text-xs font-semibold text-slate-600">New Password</label>
-                             <input type="password" value={passwordData.newPassword} onChange={(e) => setPasswordData({...passwordData, newPassword: e.target.value})} placeholder="Set new" className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500" />
-                           </div>
-                           <div className="space-y-1">
-                             <label className="text-xs font-semibold text-slate-600">Confirm Password</label>
-                             <input type="password" value={passwordData.confirmPassword} onChange={(e) => setPasswordData({...passwordData, confirmPassword: e.target.value})} placeholder="Confirm new" className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500" />
-                           </div>
-                         </div>
-                         <button onClick={handleUpdatePassword} disabled={isUpdatingPassword} className={`bg-primary-600 hover:bg-primary-700 text-white font-semibold px-5 py-2.5 rounded-xl text-xs shadow-soft cursor-pointer duration-200 ${isUpdatingPassword ? 'opacity-70 cursor-not-allowed' : ''}`}>{isUpdatingPassword ? 'Updating...' : 'Update Password'}</button>
-                       </div>
-                     </div>
-                   );
-                 default:
-                   return null;
-               }
-             })()}
-             </motion.div>
+                        {/* Security Settings Card */}
+                        <div className="card-premium bg-white p-6 space-y-4">
+                          <h3 className="font-bold text-slate-800 border-b border-slate-50 pb-2">Security Settings</h3>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className="space-y-1">
+                              <label className="text-xs font-semibold text-slate-600">Current Password</label>
+                              <input type="password" value={passwordData.currentPassword} onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })} placeholder="••••••••" className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500" />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-xs font-semibold text-slate-600">New Password</label>
+                              <input type="password" value={passwordData.newPassword} onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })} placeholder="Set new" className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500" />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-xs font-semibold text-slate-600">Confirm Password</label>
+                              <input type="password" value={passwordData.confirmPassword} onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })} placeholder="Confirm new" className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500" />
+                            </div>
+                          </div>
+                          <button onClick={handleUpdatePassword} disabled={isUpdatingPassword} className={`bg-primary-600 hover:bg-primary-700 text-white font-semibold px-5 py-2.5 rounded-xl text-xs shadow-soft cursor-pointer duration-200 ${isUpdatingPassword ? 'opacity-70 cursor-not-allowed' : ''}`}>{isUpdatingPassword ? 'Updating...' : 'Update Password'}</button>
+                        </div>
+                      </div>
+                    );
+                  default:
+                    return null;
+                }
+              })()}
+            </motion.div>
           )}
 
-           {/* Add / Edit Schedule Session Modal Dialog Overlay triggers setup layouts accurately sets */}
-           {isScheduleModalOpen && (
-              <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                 <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-white rounded-3xl p-6 w-full max-w-xl shadow-2xl space-y-5">
-                    <h3 className="font-bold text-lg text-slate-800 border-b border-slate-50 pb-3">Schedule Live Session</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                       <div className="space-y-1">
-                          <label className="text-xs font-semibold text-slate-600">Select Student</label>
-                          <select value={sessionFormData.student} onChange={e => setSessionFormData({...sessionFormData, student: e.target.value})} className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-medium focus:outline-none">
-                             {allStudentsForSchedule.map((s, i) => (
-                                <option value={s.n} key={i}>{s.n}</option>
-                             ))}
-                          </select>
-                       </div>
-                       <div className="space-y-1">
-                          <label className="text-xs font-semibold text-slate-600">Session Date</label>
-                          <input type="date" value={sessionFormData.date} onChange={e => setSessionFormData({...sessionFormData, date: e.target.value})} className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500 font-medium" />
-                       </div>
-                       <div className="space-y-1">
-                          <label className="text-xs font-semibold text-slate-600">Session Time</label>
-                          <input type="time" value={sessionFormData.time} onChange={e => setSessionFormData({...sessionFormData, time: e.target.value})} className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500 font-medium" />
-                       </div>
-                       <div className="space-y-1">
-                          <label className="text-xs font-semibold text-slate-600">Topic Details</label>
-                          <select value={sessionFormData.topic} onChange={e => setSessionFormData({...sessionFormData, topic: e.target.value})} className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-medium focus:outline-none">
-                             <option value="Document Verification">Document Verification</option>
-                             <option value="Choice Filling Advice">Choice Filling Advice</option>
-                             <option value="Fee Payment Guidance">Fee Payment Guidance</option>
-                             <option value="General Counselling Support">General Support</option>
-                          </select>
-                       </div>
-                       <div className="space-y-1 md:col-span-2">
-                          <label className="text-xs font-semibold text-slate-600">Meeting Link (Google Meet / Zoom)</label>
-                          <input type="url" value={sessionFormData.url} onChange={e => setSessionFormData({...sessionFormData, url: e.target.value})} placeholder="e.g., https://meet.google.com/abc-defg-hij" className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500 font-medium" />
-                       </div>
-                    </div>
-                    <div className="flex gap-2 justify-end mt-6 pt-4 border-t border-slate-100">
-                       <button onClick={() => setIsScheduleModalOpen(false)} className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold px-5 py-2.5 rounded-xl text-xs duration-150">Cancel</button>
-                       <button 
-                          onClick={async () => {
-                             if (!sessionFormData.date || !sessionFormData.time || !sessionFormData.url) {
-                                setCustomAlert({ isOpen: true, t: 'Warning', m: 'Please fill all fields correctly.', tp: 'warning' });
-                                return;
-                             }
-                             try {
-                                 const matchedStudent = allStudentsForSchedule.find(s => s.n === sessionFormData.student);
-                                 if (!matchedStudent) {
-                                     showAlert("Oops: Please select a valid student from option menu: " + sessionFormData.student);
-                                     return;
-                                 }
-                                
-                                await sessionApi.create({
-                                    counsellorId: counsellorProfile.id,
-                                    studentId: matchedStudent.id,
-                                    topic: sessionFormData.topic,
-                                    date: sessionFormData.date,
-                                    time: sessionFormData.time,
-                                    url: sessionFormData.url
-                                });
+          {/* Add / Edit Schedule Session Modal Dialog Overlay triggers setup layouts accurately sets */}
+          {isScheduleModalOpen && (
+            <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+              <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-white rounded-3xl p-6 w-full max-w-xl shadow-2xl space-y-5">
+                <h3 className="font-bold text-lg text-slate-800 border-b border-slate-50 pb-3">Schedule Live Session</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-slate-600">Select Student</label>
+                    <select value={sessionFormData.student} onChange={e => setSessionFormData({ ...sessionFormData, student: e.target.value })} className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-medium focus:outline-none">
+                      {allStudentsForSchedule.map((s, i) => (
+                        <option value={s.n} key={i}>{s.n}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-slate-600">Session Date</label>
+                    <input type="date" value={sessionFormData.date} onChange={e => setSessionFormData({ ...sessionFormData, date: e.target.value })} className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500 font-medium" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-slate-600">Session Time</label>
+                    <input type="time" value={sessionFormData.time} onChange={e => setSessionFormData({ ...sessionFormData, time: e.target.value })} className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500 font-medium" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-slate-600">Topic Details</label>
+                    <select value={sessionFormData.topic} onChange={e => setSessionFormData({ ...sessionFormData, topic: e.target.value })} className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-medium focus:outline-none">
+                      <option value="Document Verification">Document Verification</option>
+                      <option value="Choice Filling Advice">Choice Filling Advice</option>
+                      <option value="Fee Payment Guidance">Fee Payment Guidance</option>
+                      <option value="General Counselling Support">General Support</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1 md:col-span-2">
+                    <label className="text-xs font-semibold text-slate-600">Meeting Link (Google Meet / Zoom)</label>
+                    <input type="url" value={sessionFormData.url} onChange={e => setSessionFormData({ ...sessionFormData, url: e.target.value })} placeholder="e.g., https://meet.google.com/abc-defg-hij" className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500 font-medium" />
+                  </div>
+                </div>
+                <div className="flex gap-2 justify-end mt-6 pt-4 border-t border-slate-100">
+                  <button onClick={() => setIsScheduleModalOpen(false)} className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold px-5 py-2.5 rounded-xl text-xs duration-150">Cancel</button>
+                  <button
+                    onClick={async () => {
+                      if (!sessionFormData.date || !sessionFormData.time || !sessionFormData.url) {
+                        setCustomAlert({ isOpen: true, t: 'Warning', m: 'Please fill all fields correctly.', tp: 'warning' });
+                        return;
+                      }
+                      try {
+                        const matchedStudent = allStudentsForSchedule.find(s => s.n === sessionFormData.student);
+                        if (!matchedStudent) {
+                          showAlert("Oops: Please select a valid student from option menu: " + sessionFormData.student);
+                          return;
+                        }
 
-                                setCustomAlert({ isOpen: true, t: 'Success', m: `Session scheduled for ${sessionFormData.student} on ${sessionFormData.date} at ${sessionFormData.time}!`, tp: 'success' });
-                                
-                                 const resSessions = await sessionApi.getAll({ counsellorId: counsellorProfile.id });
-                                 const mappedS = resSessions.data.map(s => ({
-                                    id: s.id, studentId: s.studentId, n: s.student?.name || "Student", m: s.topic, s: `${s.date} ${s.time}`, url: s.url, status: s.status
-                                 }));
-                                 setSessionsList(mappedS);
-                                 
-                                 setStats([
-                                    { t: 'Assigned Students', v: String(studentsList.length || 0), d: 'Total students registered', i: Users, c: 'bg-primary-50 text-primary-600' },
-                                    { t: 'Sessions Scheduled', v: String(mappedS.length), d: `Upcoming: ${mappedS.length}`, i: Clock, c: 'bg-green-50 text-green-600' },
-                                    { t: 'Query Support Requests', v: '0', d: 'Needs review response', i: MessageSquare, c: 'bg-amber-50 text-amber-600' }
-                                 ]);
-                             } catch (e) { showAlert("Create failed: " + e.message); console.error(e); }
-                             
-                             setIsScheduleModalOpen(false);
-                          }} 
-                         className="bg-primary-600 hover:bg-primary-700 text-white font-bold px-5 py-2.5 rounded-xl text-xs shadow-soft duration-150"
-                       >
-                          Schedule Now
-                       </button>
-                    </div>
-                 </motion.div>
-              </div>
-           )}
+                        await sessionApi.create({
+                          counsellorId: counsellorProfile.id,
+                          studentId: matchedStudent.id,
+                          topic: sessionFormData.topic,
+                          date: sessionFormData.date,
+                          time: sessionFormData.time,
+                          url: sessionFormData.url
+                        });
+
+                        setCustomAlert({ isOpen: true, t: 'Success', m: `Session scheduled for ${sessionFormData.student} on ${sessionFormData.date} at ${sessionFormData.time}!`, tp: 'success' });
+
+                        const resSessions = await sessionApi.getAll({ counsellorId: counsellorProfile.id });
+                        const mappedS = resSessions.data.map(s => ({
+                          id: s.id, studentId: s.studentId, n: s.student?.name || "Student", m: s.topic, s: `${s.date} ${s.time}`, url: s.url, status: s.status
+                        }));
+                        setSessionsList(mappedS);
+
+                        setStats([
+                          { t: 'Assigned Students', v: String(studentsList.length || 0), d: 'Total students registered', i: Users, c: 'bg-primary-50 text-primary-600' },
+                          { t: 'Sessions Scheduled', v: String(mappedS.length), d: `Upcoming: ${mappedS.length}`, i: Clock, c: 'bg-green-50 text-green-600' },
+                          { t: 'Query Support Requests', v: '0', d: 'Needs review response', i: MessageSquare, c: 'bg-amber-50 text-amber-600' }
+                        ]);
+                      } catch (e) { showAlert("Create failed: " + e.message); console.error(e); }
+
+                      setIsScheduleModalOpen(false);
+                    }}
+                    className="bg-primary-600 hover:bg-primary-700 text-white font-bold px-5 py-2.5 rounded-xl text-xs shadow-soft duration-150"
+                  >
+                    Schedule Now
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          )}
         </main>
         <AnimatePresence>
           {customAlert.isOpen && (
             <div className="fixed inset-0 bg-black/40 backdrop-blur-md z-[999] flex items-center justify-center p-4">
               <motion.div initial={{ opacity: 0, scale: 0.85, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.8, y: 20 }} className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl space-y-4 text-center">
                 <div className={`p-4 rounded-full mx-auto w-16 h-16 flex items-center justify-center ${customAlert.tp === 'success' ? 'bg-green-50' : 'bg-red-50'}`}>
-                   {customAlert.tp === 'success' ? <div className="h-8 w-8 text-green-600 font-black text-2xl flex items-center justify-center">✓</div> : <ShieldAlert className="h-8 w-8 text-red-500" />}
+                  {customAlert.tp === 'success' ? <div className="h-8 w-8 text-green-600 font-black text-2xl flex items-center justify-center">✓</div> : <ShieldAlert className="h-8 w-8 text-red-500" />}
                 </div>
                 <h3 className="font-bold text-lg text-slate-800">{customAlert.t}</h3>
                 <p className="text-slate-500 text-sm leading-relaxed">{customAlert.m}</p>
@@ -938,35 +937,35 @@ export default function CounsellorDashboard() {
                 </div>
               </motion.div>
             </div>
-            )}
-          </AnimatePresence>
-          
+          )}
+        </AnimatePresence>
+
         <AnimatePresence>
           {isLogoutModalOpen && (
-              <div className="fixed inset-0 bg-black/40 backdrop-blur-md z-[999] flex items-center justify-center p-4">
-                <motion.div initial={{ opacity: 0, scale: 0.85, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.8, y: 20 }} className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl text-center">
-                  <div className="p-4 rounded-full mx-auto w-16 h-16 bg-red-50 flex items-center justify-center mb-4">
-                    <LogOut className="h-8 w-8 text-red-500 animate-pulse" />
-                  </div>
-                  <h3 className="font-bold text-lg text-slate-800 mb-2">Ready to leave?</h3>
-                  <p className="text-slate-500 text-sm">You are about to log out from your session. You'll need to sign in again to access your dashboard.</p>
-                  
-                  <div className="pt-6 grid grid-cols-2 gap-3">
-                    <button onClick={() => setIsLogoutModalOpen(false)} className="w-full bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold py-3 rounded-xl text-sm duration-150">Cancel</button>
-                    <button 
-                      onClick={() => {
-                        localStorage.removeItem('user');
-                        localStorage.removeItem('token');
-                        navigate('/login', { replace: true });
-                      }} 
-                      className="w-full bg-red-500 hover:bg-red-600 text-white font-semibold py-3 rounded-xl text-sm shadow-soft duration-150 flex items-center justify-center gap-2"
-                    >
-                      <LogOut className="h-4 w-4" /> Log Out
-                    </button>
-                  </div>
-                </motion.div>
-              </div>
-            )}
+            <div className="fixed inset-0 bg-black/40 backdrop-blur-md z-[999] flex items-center justify-center p-4">
+              <motion.div initial={{ opacity: 0, scale: 0.85, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.8, y: 20 }} className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl text-center">
+                <div className="p-4 rounded-full mx-auto w-16 h-16 bg-red-50 flex items-center justify-center mb-4">
+                  <LogOut className="h-8 w-8 text-red-500 animate-pulse" />
+                </div>
+                <h3 className="font-bold text-lg text-slate-800 mb-2">Ready to leave?</h3>
+                <p className="text-slate-500 text-sm">You are about to log out from your session. You'll need to sign in again to access your dashboard.</p>
+
+                <div className="pt-6 grid grid-cols-2 gap-3">
+                  <button onClick={() => setIsLogoutModalOpen(false)} className="w-full bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold py-3 rounded-xl text-sm duration-150">Cancel</button>
+                  <button
+                    onClick={() => {
+                      localStorage.removeItem('user');
+                      localStorage.removeItem('token');
+                      navigate('/login', { replace: true });
+                    }}
+                    className="w-full bg-red-500 hover:bg-red-600 text-white font-semibold py-3 rounded-xl text-sm shadow-soft duration-150 flex items-center justify-center gap-2"
+                  >
+                    <LogOut className="h-4 w-4" /> Log Out
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          )}
         </AnimatePresence>
       </div>
     </div>

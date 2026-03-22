@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Search, CheckCircle2, Award, Zap, ArrowRight, 
+import {
+  Search, CheckCircle2, Award, Zap, ArrowRight,
   Lock, ArrowUpRight, GraduationCap, ChevronRight,
   TrendingUp, Star, LayoutDashboard, Compass, Users, Globe, X
 } from 'lucide-react';
@@ -35,7 +35,7 @@ export default function Home() {
 
   useEffect(() => {
     const loadExams = async () => {
-      try { const res = await examApi.getAll(); setExamsList(res.data); } catch (e) {}
+      try { const res = await examApi.getAll(); setExamsList(res.data); } catch (e) { }
     };
     loadExams();
   }, []);
@@ -45,16 +45,16 @@ export default function Home() {
       showAlert('Please select an Exam and enter Expected Rank details!');
       return;
     }
-    
+
     setIsPredicting(true);
-    setPredictions([]); 
-    
+    setPredictions([]);
+
     try {
       const res = await collegeApi.predict({ rank: parseInt(rank), examId: parseInt(exam), category: 'General' });
       const mapped = res.data.map(item => ({
-         name: `${item.college.name} (${item.branch})`,
-         type: 'Listed',
-         cutoff: item.closingRank
+        name: `${item.college.name} (${item.branch})`,
+        type: 'Listed',
+        cutoff: item.closingRank
       }));
       setPredictions(mapped);
     } catch (e) {
@@ -66,16 +66,16 @@ export default function Home() {
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 20);
-      
+
       const movingDown = window.scrollY > lastScrollY;
       if (movingDown && window.scrollY > 100) {
-         setShowNavbar(false); // Scrolling Down -> Hide
+        setShowNavbar(false); // Scrolling Down -> Hide
       } else {
-         setShowNavbar(true);  // Scrolling Up -> Show
+        setShowNavbar(true);  // Scrolling Up -> Show
       }
       setLastScrollY(window.scrollY);
     };
-    
+
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, [lastScrollY]);
@@ -108,17 +108,17 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="flex items-center gap-2 cursor-pointer group">
             <div className="p-2 rounded-xl bg-gradient-to-br from-primary-600 to-indigo-600 shadow-glow duration-300 group-hover:rotate-12 transform">
-                <GraduationCap className="h-6 w-6 text-white" />
+              <GraduationCap className="h-6 w-6 text-white" />
             </div>
             <span className="font-bold text-xl tracking-tight">Edu<span className="text-primary-600">Guide</span></span>
           </motion.div>
 
           <div className="hidden md:flex items-center gap-8 font-semibold text-slate-600 text-sm">
             {['Home', 'Exams', 'Predictors', 'Mentorship'].map((item, id) => (
-               <motion.a key={id} href={`#${item.toLowerCase()}`} className="hover:text-primary-600 transition duration-300 relative group">
-                  {item}
-                  <span className="absolute bottom-[-4px] left-0 w-0 h-0.5 bg-primary-600 duration-300 group-hover:w-full"></span>
-               </motion.a>
+              <motion.a key={id} href={`#${item.toLowerCase()}`} className="hover:text-primary-600 transition duration-300 relative group">
+                {item}
+                <span className="absolute bottom-[-4px] left-0 w-0 h-0.5 bg-primary-600 duration-300 group-hover:w-full"></span>
+              </motion.a>
             ))}
           </div>
 
@@ -158,7 +158,7 @@ export default function Home() {
 
           <motion.div variants={itemVariants} className="hidden md:block relative">
             <motion.div variants={floatVariants} animate="animate" className="glass p-4 rounded-3xl relative backdrop-blur-md bg-white/40 border-slate-200/60 shadow-glass">
-              <div 
+              <div
                 className="relative overflow-hidden rounded-2xl h-[380px] cursor-pointer"
                 onMouseEnter={() => setIntervalRate(100)}
                 onMouseLeave={() => setIntervalRate(3000)}
@@ -211,9 +211,9 @@ export default function Home() {
             { t: 'College Students', d: 'Secure premium advice aggregate thresholds counseling placements frameworks.', i: GraduationCap, c: 'bg-indigo-50 text-indigo-600' },
             { t: 'For Parents Guidance', d: 'Gain visibility datasets framing aggregate benchmarks triggers framing dashboards.', i: Compass, c: 'bg-green-50 text-green-600' }
           ].map((item, idx) => (
-            <motion.div 
-              key={idx} 
-              whileHover={{ y: -8, scale: 1.02 }} 
+            <motion.div
+              key={idx}
+              whileHover={{ y: -8, scale: 1.02 }}
               onClick={() => navigate('/login')}
               className="bg-white border border-slate-100 p-6 rounded-3xl shadow-soft hover:shadow-xl duration-300 cursor-pointer group flex flex-col justify-between"
             >
@@ -285,14 +285,14 @@ export default function Home() {
             </div>
           </div>
           {isPredictorLocked && (
-             <div className="relative border-t border-slate-50 pt-5 mt-2">
-                <div className="absolute inset-x-0 bottom-0 top-0 backdrop-blur-md bg-white/50 z-10 flex flex-col items-center justify-center p-6 text-center rounded-2xl">
-                   <div className="bg-gradient-to-br from-primary-600 to-indigo-600 p-2.5 rounded-full text-white mb-3 shadow-glow"><Lock className="h-5 w-5" /></div>
-                   <h3 className="text-base font-black text-slate-900 mb-1">Unlock Premium AI Insights</h3><p className="text-slate-500 text-xs max-w-sm mb-3">View exact admission probabilities (%), dynamic filtering, and AI accurate suggestions sets.</p>
-                   <button onClick={() => setIsPredictorLocked(false)} className="bg-primary-600 hover:bg-primary-700 text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow-soft flex items-center gap-2 duration-150 cursor-pointer">Unlock Full Predictor <ArrowUpRight className="h-3.5 w-3.5" /></button>
-                </div>
-                <div className="opacity-20 filter blur-sm"><p className="font-bold text-slate-800">AI Component Analysis Row</p><div className="h-28 bg-slate-100 rounded-xl mt-3"></div></div>
-             </div>
+            <div className="relative border-t border-slate-50 pt-5 mt-2">
+              <div className="absolute inset-x-0 bottom-0 top-0 backdrop-blur-md bg-white/50 z-10 flex flex-col items-center justify-center p-6 text-center rounded-2xl">
+                <div className="bg-gradient-to-br from-primary-600 to-indigo-600 p-2.5 rounded-full text-white mb-3 shadow-glow"><Lock className="h-5 w-5" /></div>
+                <h3 className="text-base font-black text-slate-900 mb-1">Unlock Premium AI Insights</h3><p className="text-slate-500 text-xs max-w-sm mb-3">View exact admission probabilities (%), dynamic filtering, and AI accurate suggestions sets.</p>
+                <button onClick={() => setIsPredictorLocked(false)} className="bg-primary-600 hover:bg-primary-700 text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow-soft flex items-center gap-2 duration-150 cursor-pointer">Unlock Full Predictor <ArrowUpRight className="h-3.5 w-3.5" /></button>
+              </div>
+              <div className="opacity-20 filter blur-sm"><p className="font-bold text-slate-800">AI Component Analysis Row</p><div className="h-28 bg-slate-100 rounded-xl mt-3"></div></div>
+            </div>
           )}
         </motion.div>
       </section>
@@ -303,7 +303,7 @@ export default function Home() {
         <motion.div variants={containerVariants} initial="hidden" whileInView="visible" viewport={{ once: true }} className="grid grid-cols-2 md:grid-cols-4 gap-6">
           {examsList.filter(e => e.isActive).map((item, idx) => (
             <motion.div key={idx} variants={itemVariants} whileHover={{ y: -6, transition: { duration: 0.2 } }}><Link to={`/exam/${item.name.toLowerCase()}`}><div className="p-6 rounded-2xl border border-slate-100 bg-white shadow-soft hover:shadow-xl transition-all duration-300 relative group cursor-pointer h-full flex flex-col justify-between"><div><div className={`p-4 rounded-xl ${item.colorClass || 'bg-slate-50 text-slate-600'} w-fit font-black text-lg mb-4`}>{item.name}</div><h4 className="font-extrabold text-slate-800 text-base mb-1">{item.title || item.name}</h4><p className="text-[11px] text-slate-400">Entrance Examination</p></div><p className="text-xs text-primary-600 font-bold mt-4 flex items-center justify-between"><span>{item.collegeCount || 'Multiple Colleges'}</span> <ChevronRight className="h-4 w-4 opacity-0 group-hover:opacity-100 duration-150" /></p></div>
-</Link></motion.div>
+            </Link></motion.div>
           ))}
         </motion.div>
       </section>
@@ -336,28 +336,28 @@ export default function Home() {
 
       {/* Custom Animated Alert Modal overlay trigger accurate framing */}
       <AnimatePresence>
-         {isAlertOpen && (
-           <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-              <motion.div 
-                 initial={{ opacity: 0, scale: 0.9, y: 30 }} 
-                 animate={{ opacity: 1, scale: 1, y: 0 }} 
-                 exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                 transition={{ type: 'spring', damping: 25, stiffness: 400 }}
-                 className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl space-y-4 text-center border border-slate-100 flex flex-col items-center"
-              >
-                  <div className="bg-primary-50 p-3.5 rounded-2xl text-primary-600">
-                     <GraduationCap className="h-8 w-8 text-primary-600" />
-                  </div>
-                  <div>
-                     <h3 className="text-xl font-extrabold text-slate-900">Portal Opening Soon!</h3>
-                     <p className="text-slate-500 text-xs mt-1.5 leading-relaxed">The Scholarship Registration process will begin from next week. Get your documents ready!</p>
-                  </div>
-                  <button onClick={() => setIsAlertOpen(false)} className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 rounded-xl text-xs duration-200 shadow-soft cursor-pointer">
-                     Understood, Thank You
-                  </button>
-              </motion.div>
-           </div>
-         )}
+        {isAlertOpen && (
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 30 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 400 }}
+              className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl space-y-4 text-center border border-slate-100 flex flex-col items-center"
+            >
+              <div className="bg-primary-50 p-3.5 rounded-2xl text-primary-600">
+                <GraduationCap className="h-8 w-8 text-primary-600" />
+              </div>
+              <div>
+                <h3 className="text-xl font-extrabold text-slate-900">Portal Opening Soon!</h3>
+                <p className="text-slate-500 text-xs mt-1.5 leading-relaxed">The Scholarship Registration process will begin from next week. Get your documents ready!</p>
+              </div>
+              <button onClick={() => setIsAlertOpen(false)} className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 rounded-xl text-xs duration-200 shadow-soft cursor-pointer">
+                Understood, Thank You
+              </button>
+            </motion.div>
+          </div>
+        )}
       </AnimatePresence>
     </div>
   );

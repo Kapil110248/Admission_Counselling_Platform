@@ -646,8 +646,8 @@ export default function StudentDashboard() {
                               </div>
                               <div className="flex items-center gap-3">
                                 <span className={`px-3 py-1 rounded-xl text-xs font-bold ${s.status === 'Completed' ? 'bg-green-50 text-green-600' :
-                                    s.status === 'Cancelled' ? 'bg-red-50 text-red-600' :
-                                      'bg-primary-50 text-primary-600'
+                                  s.status === 'Cancelled' ? 'bg-red-50 text-red-600' :
+                                    'bg-primary-50 text-primary-600'
                                   }`}>{s.status}</span>
                                 {s.url && (
                                   <a href={s.url} target="_blank" rel="noreferrer" className="bg-primary-600 hover:bg-primary-700 text-white text-xs font-bold px-4 py-2 rounded-xl duration-150 flex items-center gap-1">
@@ -978,10 +978,10 @@ export default function StudentDashboard() {
                               }}
                               disabled={studentProfile.currentPlan === c.name}
                               className={`w-full mt-6 py-2.5 text-xs font-semibold rounded-xl duration-200 ${studentProfile.currentPlan === c.name
-                                  ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
-                                  : c.isFeatured
-                                    ? 'bg-primary-600 text-white hover:bg-primary-700'
-                                    : 'bg-slate-50 text-slate-700 hover:bg-slate-100'
+                                ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                                : c.isFeatured
+                                  ? 'bg-primary-600 text-white hover:bg-primary-700'
+                                  : 'bg-slate-50 text-slate-700 hover:bg-slate-100'
                                 }`}
                             >
                               {studentProfile.currentPlan === c.name ? 'Current Plan' : c.actionText}
@@ -1019,8 +1019,8 @@ export default function StudentDashboard() {
                                   </p>
                                 </div>
                                 <span className={`px-3 py-1 rounded-xl text-xs font-bold ${enq.status === 'Approved' ? 'bg-green-50 text-green-600' :
-                                    enq.status === 'Rejected' ? 'bg-red-50 text-red-600' :
-                                      'bg-amber-50 text-amber-600'
+                                  enq.status === 'Rejected' ? 'bg-red-50 text-red-600' :
+                                    'bg-amber-50 text-amber-600'
                                   }`}>
                                   {enq.status || 'Pending'}
                                 </span>
