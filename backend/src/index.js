@@ -8,6 +8,9 @@ const examRoute = require('./routes/examRoute');
 const sessionRoute = require('./routes/sessionRoute');
 const collegeRoute = require('./routes/collegeRoute');
 const scholarshipRoute = require('./routes/scholarshipRoute');
+const packageRoute = require('./routes/packageRoute');
+const notificationRoute = require('./routes/notificationRoute');
+const enquiryRoute = require('./routes/enquiryRoute');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -15,8 +18,7 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const prisma = require('./prisma');
 
 async function checkDbConnection() {
   try {
@@ -43,7 +45,39 @@ app.use('/api/colleges', collegeRoute);
 app.use('/api/sessions', sessionRoute);
 app.use('/api/chat', chatRoute);
 app.use('/api/scholarships', scholarshipRoute);
+app.use('/api/packages', packageRoute);
+app.use('/api/notifications', notificationRoute);
+app.use('/api/enquiry', enquiryRoute);
 
-app.listen(PORT, () => {
+const http = require('http');
+const { Server } = require('socket.io');
+
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"]
+  }
+});
+
+io.on('connection', (socket) => {
+  console.log(`User connected: ${socket.id}`);
+
+  socket.on('join_room', (userId) => {
+    socket.join(String(userId));
+    console.log(`User joined room: ${userId}`);
+  });
+
+  socket.on('send_message', (data) => {
+    // Relay to receiverId's room trigger configurations setups
+    socket.to(String(data.receiverId)).emit('receive_message', data);
+  });
+
+  socket.on('disconnect', () => {
+    console.log(`User disconnected: ${socket.id}`);
+  });
+});
+
+server.listen(PORT, () => {
   console.log(`Server running safely on http://localhost:${PORT}`);
 });

@@ -33,7 +33,7 @@ const Preloader = () => {
           <div className="bg-primary-600 p-5 rounded-3xl shadow-glow relative z-10">
             <GraduationCap className="w-12 h-12 text-white" />
           </div>
-          
+
           {/* Pulsing ring around icon */}
           <motion.div
             animate={{

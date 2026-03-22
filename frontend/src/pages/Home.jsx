@@ -1,14 +1,17 @@
 import { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Search, CheckCircle2, Award, Zap, ArrowRight, 
   Lock, ArrowUpRight, GraduationCap, ChevronRight,
   TrendingUp, Star, LayoutDashboard, Compass, Users, Globe, X
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
 import { examApi, collegeApi } from '../api';
+import { useToast } from '../context/ToastContext';
 
 export default function Home() {
+  const navigate = useNavigate();
+  const { showAlert } = useToast();
   const [scrolled, setScrolled] = useState(false);
   const [exam, setExam] = useState('');
   const [rank, setRank] = useState('');
@@ -16,10 +19,10 @@ export default function Home() {
   const [isPredicting, setIsPredicting] = useState(false);
   const [currentImg, setCurrentImg] = useState(0);
   const [intervalRate, setIntervalRate] = useState(3000);
-  const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [isPredictorLocked, setIsPredictorLocked] = useState(true);
   const [showNavbar, setShowNavbar] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
+  const [isAlertOpen, setIsAlertOpen] = useState(false);
 
   const heroImages = [
     "https://images.unsplash.com/photo-1523240795612-9a054b0db644?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
@@ -39,7 +42,7 @@ export default function Home() {
 
   const handlePredict = async () => {
     if (!exam || !rank) {
-      alert('Please select an Exam and enter Expected Rank details!');
+      showAlert('Please select an Exam and enter Expected Rank details!');
       return;
     }
     
@@ -55,7 +58,7 @@ export default function Home() {
       }));
       setPredictions(mapped);
     } catch (e) {
-      alert('Prediction failed setups thresholds data framing.');
+      showAlert('Prediction failed setups thresholds data framing.');
     }
     setIsPredicting(false);
   };
@@ -120,8 +123,8 @@ export default function Home() {
           </div>
 
           <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="flex items-center gap-4">
-            <Link to="/login" className="text-slate-600 font-bold text-sm hover:text-primary-600 transition">Login</Link>
-            <Link to="/student-dashboard" className="bg-gradient-to-r from-primary-600 to-indigo-600 hover:shadow-cyan text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow-soft duration-300 transform hover:scale-[1.03]">Dashboard</Link>
+            <Link to="/login" className="text-slate-600 font-bold text-sm hover:text-primary-600 transition">Sign In</Link>
+            <Link to="/login" className="bg-gradient-to-r from-primary-600 to-indigo-600 hover:shadow-cyan text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow-soft duration-300 transform hover:scale-[1.03]">Sign Up</Link>
           </motion.div>
         </div>
       </nav>
@@ -208,7 +211,12 @@ export default function Home() {
             { t: 'College Students', d: 'Secure premium advice aggregate thresholds counseling placements frameworks.', i: GraduationCap, c: 'bg-indigo-50 text-indigo-600' },
             { t: 'For Parents Guidance', d: 'Gain visibility datasets framing aggregate benchmarks triggers framing dashboards.', i: Compass, c: 'bg-green-50 text-green-600' }
           ].map((item, idx) => (
-            <motion.div key={idx} whileHover={{ y: -8, scale: 1.02 }} className="bg-white border border-slate-100 p-6 rounded-3xl shadow-soft hover:shadow-xl duration-300 cursor-pointer group flex flex-col justify-between">
+            <motion.div 
+              key={idx} 
+              whileHover={{ y: -8, scale: 1.02 }} 
+              onClick={() => navigate('/login')}
+              className="bg-white border border-slate-100 p-6 rounded-3xl shadow-soft hover:shadow-xl duration-300 cursor-pointer group flex flex-col justify-between"
+            >
               <div>
                 <div className={`p-3.5 rounded-2xl w-fit ${item.c} shadow-sm group-hover:rotate-6 duration-300`}><item.i className="h-6 w-6" /></div>
                 <h4 className="font-extrabold text-slate-800 text-base mt-4 mb-2">{item.t}</h4>
@@ -232,7 +240,7 @@ export default function Home() {
               <p className="text-white/80 text-sm mt-0.5">Get 1:1 mentorship from top admission officers with exclusive predictions.</p>
             </div>
           </div>
-          <button className="bg-white hover:bg-slate-50 text-indigo-800 font-bold px-6 py-3 rounded-2xl shadow-soft duration-300 relative z-10 text-sm min-w-[140px] transform hover:translate-y-[-2px]">Claim Offer</button>
+          <button onClick={() => navigate('/login')} className="bg-white hover:bg-slate-50 text-indigo-800 font-bold px-6 py-3 rounded-2xl shadow-soft duration-300 relative z-10 text-sm min-w-[140px] transform hover:translate-y-[-2px]">Claim Offer</button>
         </motion.div>
       </section>
 
@@ -293,8 +301,9 @@ export default function Home() {
       <section id="exams" className="max-w-7xl mx-auto px-6 py-20 bg-white border-y border-slate-100/80">
         <div className="text-center max-w-xl mx-auto mb-12"><span className="bg-primary-50 text-primary-600 px-3 py-1 rounded-full text-xs font-bold">DATABANK</span><h2 className="text-3xl font-black text-slate-900 mt-2 mb-3">Popular Entrance Exams</h2><p className="text-slate-500 text-sm">Master insights for top certifications across India.</p></div>
         <motion.div variants={containerVariants} initial="hidden" whileInView="visible" viewport={{ once: true }} className="grid grid-cols-2 md:grid-cols-4 gap-6">
-          {[{ id: 'neet', title: 'NEET UG', count: '100+ Colleges', color: 'bg-red-50 text-red-600 border-red-100/50' }, { id: 'jee', title: 'JEE Main', count: '300+ Colleges', color: 'bg-blue-50 text-blue-600 border-blue-100/50' }, { id: 'cuet', title: 'CUET', count: '150+ Colleges', color: 'bg-purple-50 text-purple-600 border-purple-100/50' }, { id: 'clat', title: 'CLAT', count: '50+ Law Schools', color: 'bg-orange-50 text-orange-600 border-orange-100/50' }].map((item, idx) => (
-            <motion.div key={idx} variants={itemVariants} whileHover={{ y: -6, transition: { duration: 0.2 } }}><Link to={`/exam/${item.id}`}><div className="p-6 rounded-2xl border border-slate-100 bg-white shadow-soft hover:shadow-xl transition-all duration-300 relative group cursor-pointer h-full flex flex-col justify-between"><div><div className={`p-4 rounded-xl ${item.color} w-fit font-black text-lg mb-4`}>{item.title.split(' ')[0]}</div><h4 className="font-extrabold text-slate-800 text-base mb-1">{item.title}</h4><p className="text-[11px] text-slate-400">National Eligibility Test</p></div><p className="text-xs text-primary-600 font-bold mt-4 flex items-center justify-between"><span>{item.count}</span> <ChevronRight className="h-4 w-4 opacity-0 group-hover:opacity-100 duration-150" /></p></div></Link></motion.div>
+          {examsList.filter(e => e.isActive).map((item, idx) => (
+            <motion.div key={idx} variants={itemVariants} whileHover={{ y: -6, transition: { duration: 0.2 } }}><Link to={`/exam/${item.name.toLowerCase()}`}><div className="p-6 rounded-2xl border border-slate-100 bg-white shadow-soft hover:shadow-xl transition-all duration-300 relative group cursor-pointer h-full flex flex-col justify-between"><div><div className={`p-4 rounded-xl ${item.colorClass || 'bg-slate-50 text-slate-600'} w-fit font-black text-lg mb-4`}>{item.name}</div><h4 className="font-extrabold text-slate-800 text-base mb-1">{item.title || item.name}</h4><p className="text-[11px] text-slate-400">Entrance Examination</p></div><p className="text-xs text-primary-600 font-bold mt-4 flex items-center justify-between"><span>{item.collegeCount || 'Multiple Colleges'}</span> <ChevronRight className="h-4 w-4 opacity-0 group-hover:opacity-100 duration-150" /></p></div>
+</Link></motion.div>
           ))}
         </motion.div>
       </section>

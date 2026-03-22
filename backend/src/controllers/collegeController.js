@@ -1,5 +1,4 @@
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const prisma = require('../prisma');
 
 exports.getColleges = async (req, res) => {
   try { res.json(await prisma.college.findMany({ include: { cutoffs: true } })); } catch (error) { res.status(500).json({ error: 'Server error setups thresholds configurations.' }); }
@@ -29,7 +28,7 @@ exports.deleteCollege = async (req, res) => {
 };
 
 // Predictor endpoint logic datasets match thresholds triggers
-exports.predict = async (req, res) => {
+exports.predictColleges = async (req, res) => {
   try {
     const { examId, rank, category } = req.body;
     const predictions = await prisma.cutoff.findMany({

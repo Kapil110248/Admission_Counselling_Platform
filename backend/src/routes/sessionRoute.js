@@ -1,6 +1,10 @@
 const express = require('express');
 const prisma = require('../prisma');
+const { createSystemNotification } = require('../controllers/notificationController');
+const authMiddleware = require('../middlewares/authMiddleware');
 const router = express.Router();
+
+router.use(authMiddleware);
 
 // Create Session 
 router.post('/', async (req, res) => {
@@ -16,6 +20,12 @@ router.post('/', async (req, res) => {
          url 
        }
      });
+
+     try {
+       await createSystemNotification(studentId, 'Session Scheduled', `You successfully scheduled a session on ${topic}.`);
+       await createSystemNotification(counsellorId, 'New Session Booking', `A student booked a session with you on ${date} at ${time}.`);
+     } catch (err) { console.error('Failed session notifications:', err); }
+
      res.status(201).json(session);
   } catch (e) { res.status(400).json({ error: e.message }); }
 });

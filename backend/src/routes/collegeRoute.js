@@ -1,17 +1,19 @@
 const express = require('express');
-const { getColleges, createCollege, updateCollege, deleteCollege, predict, getCutoffs, createCutoff, updateCutoff, deleteCutoff } = require('../controllers/collegeController');
+const { getColleges, createCollege, updateCollege, deleteCollege, predictColleges, getCutoffs, createCutoff, updateCutoff, deleteCutoff } = require('../controllers/collegeController');
+const authMiddleware = require('../middlewares/authMiddleware');
 const router = express.Router();
-
 router.get('/', getColleges);
+router.get('/cutoffs/list', getCutoffs); 
+router.post('/predict', predictColleges); // Publicly accessible prediction
+
+// Protected routes (Admin/Counsellor only usually, but let's just keep as auth for now)
+router.use(authMiddleware);
+
 router.post('/', createCollege);
 router.put('/:id', updateCollege);
 router.delete('/:id', deleteCollege);
-
-// Predict matchings endpoint trigger
-router.get('/cutoffs/list', getCutoffs); 
-router.post('/cutoffs', createCutoff); // Added create cutoff
-router.put('/cutoffs/:id', updateCutoff); // Added update cutoff
-router.delete('/cutoffs/:id', deleteCutoff); // Added delete cutoff
-router.post('/predict', predict);
+router.post('/cutoffs', createCutoff); 
+router.put('/cutoffs/:id', updateCutoff); 
+router.delete('/cutoffs/:id', deleteCutoff);
 
 module.exports = router;

@@ -35,6 +35,7 @@ export const userApi = {
   update: (id, data) => apiClient.put(`/users/${id}`, data),
   delete: (id) => apiClient.delete(`/users/${id}`),
   changePassword: (data) => apiClient.post('/users/change-password', data),
+  upgradePlan: (data) => apiClient.post('/users/upgrade', data),
 };
 
 export const examApi = {
@@ -71,6 +72,27 @@ export const scholarshipApi = {
 export const chatApi = {
   getMessages: (user1Id, user2Id) => apiClient.get(`/chat/${user1Id}/${user2Id}`),
   sendMessage: (data) => apiClient.post('/chat', data),
+  getConversations: (userId) => apiClient.get(`/chat/conversations/${userId}`),
+};
+
+export const packageApi = {
+  getAll: () => apiClient.get('/packages'),
+  create: (data) => apiClient.post('/packages', data),
+  update: (id, data) => apiClient.put(`/packages/${id}`, data),
+  delete: (id) => apiClient.delete(`/packages/${id}`),
+};
+
+export const notificationApi = {
+  getAll: (userId) => apiClient.get(`/notifications/user/${userId}`),
+  markRead: (id) => apiClient.put(`/notifications/${id}/read`),
+  markAllRead: (userId) => apiClient.put(`/notifications/user/${userId}/read-all`),
+};
+
+export const enquiryApi = {
+  create: (data) => apiClient.post('/enquiry', data),
+  getCounsellor: (id) => apiClient.get(`/enquiry/counsellor/${id}`),
+  getStudent: (id) => apiClient.get(`/enquiry/student/${id}`),
+  updateStatus: (id, status) => apiClient.put(`/enquiry/${id}`, { status }),
 };
 
 export default apiClient;

@@ -7,15 +7,47 @@ import {
   LayoutDashboard, Compass, Star, GraduationCap, Bell, Search,
   Menu, X, CheckSquare, Clock, ArrowRight, Settings, LogOut, ChevronRight, Award, Users, ShieldAlert, BookOpen, Check, Edit3, Trash2
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import { userApi, examApi, collegeApi, authApi } from '../api';
+import { Link, useNavigate } from 'react-router-dom';
+import { userApi, examApi, collegeApi, authApi, scholarshipApi, packageApi, notificationApi } from '../api';
+import { useToast } from '../context/ToastContext';
 
 export default function AdminDashboard() {
+  const navigate = useNavigate();
+  const { showAlert } = useToast();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [activeTab, setActiveTab] = useState(localStorage.getItem('adminActiveTab') || 'overview');
   const [isLoading, setIsLoading] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [notificationsList, setNotificationsList] = useState([]);
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+
+  const fetchNotifications = async () => {
+    try {
+      const userStr = localStorage.getItem('user');
+      if (!userStr) return;
+      const u = JSON.parse(userStr);
+      const res = await notificationApi.getAll(u.id);
+      setNotificationsList(res.data);
+    } catch (e) { console.error(e); }
+  };
+
+  const handleMarkAllRead = async () => {
+    try {
+      const userStr = localStorage.getItem('user');
+      if (!userStr) return;
+      const u = JSON.parse(userStr);
+      await notificationApi.markAllRead(u.id);
+      fetchNotifications();
+    } catch (e) { console.error(e); }
+  };
+
+  const handleMarkRead = async (id) => {
+    try {
+      await notificationApi.markRead(id);
+      fetchNotifications();
+    } catch (e) { console.error(e); }
+  };
 
   // Custom Alert Mode settings setups thresholds configuration
   const [customAlert, setCustomAlert] = useState({ isOpen: false, t: 'Success', m: '', tp: 'success' });
@@ -32,7 +64,7 @@ export default function AdminDashboard() {
   const [examsList, setExamsList] = useState([]);
   const [isExamModalOpen, setIsExamModalOpen] = useState(false);
   const [currentExamEdit, setCurrentExamEdit] = useState(null);
-  const [examFormData, setExamFormData] = useState({ name: '', date: '', applicants: '', board: 'NTA', stream: 'Engineering', url: '' });
+  const [examFormData, setExamFormData] = useState({ name: '', date: '', applicants: '', board: 'NTA', stream: 'Engineering', url: '', title: '', collegeCount: '', colorClass: 'bg-blue-50 text-blue-600 border-blue-100/50' });
 
   // Colleges State Logic for List Dashboard
   const [collegesList, setCollegesList] = useState([]);
@@ -51,8 +83,22 @@ export default function AdminDashboard() {
   const [isCutoffModalOpen, setIsCutoffModalOpen] = useState(false);
   const [cutoffFormData, setCutoffFormData] = useState({ collegeId: '', examId: '', branch: '', category: 'General', closingRank: '', round: '1', quota: 'All India', year: '2025' });
   
+  // Scholarship State Logic
+  const [scholarshipsList, setScholarshipsList] = useState([]);
+  const [isScholarshipModalOpen, setIsScholarshipModalOpen] = useState(false);
+  const [currentScholarshipEdit, setCurrentScholarshipEdit] = useState(null);
+  const [scholarshipFormData, setScholarshipFormData] = useState({ name: '', description: '', amount: '', eligibility: '', officialUrl: '' });
+  // Package State for admin package triggers configs
+  const [packagesList, setPackagesList] = useState([]);
+  const [isPackageModalOpen, setIsPackageModalOpen] = useState(false);
+  const [currentPackageEdit, setCurrentPackageEdit] = useState(null);
+  const [packageFormData, setPackageFormData] = useState({ name: '', price: '', benefits: '', actionText: '', isFeatured: false });
+
   const [adminProfile, setAdminProfile] = useState({ name: '', email: '', phone: '', role: '' });
   const [passwordForm, setPasswordForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
+  const fetchScholarships = async () => { try { const res = await scholarshipApi.getAll(); setScholarshipsList(res.data); } catch (e) { console.error(e); } };
+  const fetchPackages = async () => { try { const res = await packageApi.getAll(); setPackagesList(res.data); } catch (e) { console.error(e); } };
+
   const fetchAdminProfile = async () => {
     try {
         const userStr = localStorage.getItem('user');
@@ -79,14 +125,20 @@ export default function AdminDashboard() {
     if (activeTab === 'exams') fetchExams();
     if (activeTab === 'colleges') fetchColleges();
     if (activeTab === 'cutoffs') fetchCutoffs();
+    if (activeTab === 'scholarships') fetchScholarships();
+    if (activeTab === 'packages') fetchPackages();
+
+              
+
     if (activeTab === 'settings') fetchAdminProfile();
-    if (activeTab === 'overview') { fetchStats(); fetchUsers(); fetchExams(); fetchColleges(); fetchCutoffs(); }
+    if (activeTab === 'overview') { fetchStats(); fetchUsers(); fetchExams(); fetchColleges(); fetchCutoffs(); fetchScholarships(); }
   }, [activeTab]);
 
   const handleTabChange = (tab) => {
     if (tab === activeTab) return;
     setIsLoading(true);
-    setIsNotificationsOpen(false); // close modal on tab change
+    setIsNotificationsOpen(false);
+    if (window.innerWidth < 768) setIsSidebarOpen(false); // Close sidebar on mobile after click
     setActiveTab(tab);
     localStorage.setItem('adminActiveTab', tab);
     setTimeout(() => setIsLoading(false), 600);
@@ -104,6 +156,8 @@ export default function AdminDashboard() {
     { id: 'exams', icon: BookOpen, label: 'Manage Exams' },
     { id: 'colleges', icon: Compass, label: 'Colleges List' },
     { id: 'cutoffs', icon: Award, label: 'Cutoff Data' },
+    { id: 'scholarships', icon: GraduationCap, label: 'Scholarships' },
+    { id: 'packages', icon: Award, label: 'Packages' },
     { id: 'settings', icon: Settings, label: 'Settings' },
   ];
 
@@ -130,54 +184,68 @@ export default function AdminDashboard() {
 
   return (
     <div className="flex h-screen bg-[#f3f6fc] overflow-hidden">
-      {/* Sidebar Navigation */}
+      {/* Sidebar Navigation - Fixed Drawer for Mobile */}
       <AnimatePresence>
         {isSidebarOpen && (
-          <motion.div
-            initial={{ width: 0, opacity: 0 }}
-            animate={{ width: 280, opacity: 1 }}
-            exit={{ width: 0, opacity: 0 }}
-            className="h-full bg-white border-r border-slate-100 flex flex-col z-20 shadow-xl md:shadow-none"
-          >
-            <div className="p-6 flex items-center justify-between border-b border-slate-50">
-              <div className="flex items-center gap-2">
-                <GraduationCap className="h-7 w-7 text-primary-600" />
-                <span className="font-bold text-lg">Edu<span className="text-primary-600">Admin</span></span>
+          <>
+            {/* Mobile Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsSidebarOpen(false)}
+              className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100] md:hidden"
+            />
+            
+            <motion.div
+              initial={{ x: '-100%', opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: '-100%', opacity: 0 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="fixed md:relative h-full bg-white border-r border-slate-100 flex flex-col z-[101] md:z-20 shadow-2xl md:shadow-none w-[280px]"
+            >
+              <div className="p-6 flex items-center justify-between border-b border-slate-50">
+                <div className="flex items-center gap-2">
+                  <GraduationCap className="h-7 w-7 text-primary-600" />
+                  <span className="font-bold text-lg">Edu<span className="text-primary-600">Admin</span></span>
+                </div>
+                <button onClick={() => setIsSidebarOpen(false)} className="md:hidden text-slate-500 hover:bg-slate-50 p-1 rounded-lg"><X className="h-5 w-5" /></button>
               </div>
-              <button onClick={() => setIsSidebarOpen(false)} className="md:hidden text-slate-500"><X className="h-5 w-5" /></button>
-            </div>
 
-            <nav className="p-4 flex-1 space-y-1">
-              {sidebarItems.map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => handleTabChange(item.id)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-all ${activeTab === item.id ? 'bg-primary-50 text-primary-600' : 'text-slate-600 hover:bg-slate-50'}`}
-                >
-                  <item.icon className="h-5 w-5" />
-                  {item.label}
+              <nav className="p-4 flex-1 space-y-1 overflow-y-auto custom-scrollbar">
+                {sidebarItems.map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => handleTabChange(item.id)}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-all ${activeTab === item.id ? 'bg-primary-50 text-primary-600 border border-primary-100/50 shadow-sm' : 'text-slate-600 hover:bg-slate-50'}`}
+                  >
+                    <item.icon className={`h-5 w-5 ${activeTab === item.id ? 'text-primary-600' : 'text-slate-400'}`} />
+                    {item.label}
+                  </button>
+                ))}
+              </nav>
+
+              <div className="p-4 border-t border-slate-50 space-y-1">
+                <button onClick={() => setIsLogoutModalOpen(true)} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm text-red-600 hover:bg-red-50 group transition-colors">
+                  <LogOut className="h-5 w-5 group-hover:translate-x-0.5 transition-transform" /> Logout
                 </button>
-              ))}
-            </nav>
-
-            <div className="p-4 border-t border-slate-50 space-y-1">
-              <Link to="/login" className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm text-red-600 hover:bg-red-50"><LogOut className="h-5 w-5" /> Logout</Link>
-            </div>
-          </motion.div>
+              </div>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
 
       {/* Main content Area */}
       <div className="flex-1 flex flex-col h-full overflow-y-auto overflow-x-hidden">
         {/* Top Navbar */}
-        <header className="bg-white border-b border-slate-100 py-4 px-6 flex items-center justify-between sticky top-0 z-10 relative">
+        <header className="bg-white border-b border-slate-100 py-4 px-6 flex items-center justify-between sticky top-0 z-[50]">
           <div className="flex items-center gap-4">
-            {!isSidebarOpen && (
-              <button onClick={() => setIsSidebarOpen(true)} className="text-slate-600"><Menu className="h-5 w-5" /></button>
-            )}
+            <button onClick={() => setIsSidebarOpen(true)} className={`text-slate-600 hover:bg-slate-50 p-2 rounded-xl transition-colors md:${isSidebarOpen ? 'hidden' : 'block'}`}>
+              <Menu className="h-5 w-5" />
+            </button>
             <div className="hidden md:flex items-center bg-slate-50 border border-slate-100 rounded-xl px-4 py-2 gap-2 w-72">
               <Search className="h-4 w-4 text-slate-400" />
-              <input type="text" placeholder="Search users, records..." className="bg-transparent border-0 focus:outline-none text-sm w-full" />
+              <input type="text" placeholder="Search users, records..." className="bg-transparent border-0 focus:outline-none text-sm w-full font-medium" />
             </div>
           </div>
 
@@ -188,27 +256,40 @@ export default function AdminDashboard() {
                 className="bg-slate-50 p-2 rounded-xl text-slate-500 relative hover:bg-slate-100 duration-200"
               >
                 <Bell className="h-5 w-5" />
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full"></span>
+                {notificationsList.some(n => !n.isRead) && (
+                  <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full"></span>
+                )}
               </button>
               {isNotificationsOpen && (
                 <motion.div
                   initial={{ opacity: 0, y: 10, scale: 0.95 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
-                  className="absolute right-0 mt-2 w-80 bg-white border border-slate-100 rounded-2xl shadow-xl z-30 p-4 space-y-2"
+                  className="absolute right-0 mt-2 w-80 bg-white border border-slate-100 rounded-2xl shadow-xl z-30 p-4 space-y-2 max-h-96 overflow-y-auto"
                 >
-                  <div className="flex justify-between items-center border-b border-slate-50 pb-2 MB-1">
+                  <div className="flex justify-between items-center border-b border-slate-50 pb-2">
                     <h4 className="font-bold text-slate-800 text-sm">Notifications</h4>
-                    <span className="text-xs text-primary-600 font-semibold cursor-pointer">Mark all</span>
+                    {notificationsList.some(n => !n.isRead) && (
+                      <span onClick={handleMarkAllRead} className="text-xs text-primary-600 font-semibold cursor-pointer hover:underline">Mark all</span>
+                    )}
                   </div>
                   <div className="space-y-2">
-                    <div className="p-2.5 border border-slate-50 rounded-xl hover:bg-slate-50 duration-150 cursor-pointer">
-                      <p className="font-bold text-slate-800 text-xs">New System Analytics Update</p>
-                      <p className="text-[10px] text-slate-500 mt-0.5">Admin datasets matrix thresholds updated correctly framing triggers metrics setups.</p>
-                    </div>
-                    <div className="p-2.5 border border-slate-50 rounded-xl hover:bg-slate-50 duration-150 cursor-pointer">
-                      <p className="font-bold text-slate-800 text-xs">Security Advisory</p>
-                      <p className="text-[10px] text-slate-500 mt-0.5">Updates parameters configurations configurations setups thresholds sets parameter configurations.</p>
-                    </div>
+                    {notificationsList.length === 0 ? (
+                      <p className="text-xs text-slate-400 text-center py-4">No new notifications.</p>
+                    ) : (
+                      notificationsList.map((n) => (
+                        <div 
+                          key={n.id} 
+                          onClick={() => !n.isRead && handleMarkRead(n.id)}
+                          className={`p-2.5 border border-slate-50 rounded-xl transition duration-150 ${n.isRead ? 'opacity-60 bg-white' : 'bg-slate-50 hover:bg-slate-100 cursor-pointer shadow-soft'}`}
+                        >
+                          <div className="flex justify-between items-start">
+                            <p className="font-bold text-slate-800 text-xs">{n.title}</p>
+                            {!n.isRead && <span className="w-1.5 h-1.5 bg-primary-500 rounded-full mt-1"></span>}
+                          </div>
+                          <p className={`text-[10px] mt-0.5 ${n.isRead ? 'text-slate-400' : 'text-slate-600 font-medium'}`}>{n.message}</p>
+                        </div>
+                      ))
+                    )}
                   </div>
                 </motion.div>
               )}
@@ -301,23 +382,24 @@ export default function AdminDashboard() {
                       <h3 className="font-bold text-slate-800">Assigned Verification Pending</h3>
                       <button className="text-primary-600 font-semibold text-xs flex items-center gap-1">View All <ChevronRight className="h-3 w-3" /></button>
                     </div>
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-sm">
+                    <div className="overflow-x-auto custom-scrollbar shadow-inner rounded-xl border border-slate-100">
+                      <table className="w-full text-sm min-w-[600px]">
                         <thead>
                           <tr className="border-b border-slate-100">
-                            <th className="text-left font-semibold text-slate-400 py-3">User</th>
-                            <th className="text-left font-semibold text-slate-400 py-3">Applied For</th>
-                            <th className="text-left font-semibold text-slate-400 py-3">Type</th>
-                            <th className="text-left font-semibold text-slate-400 py-3">Status</th>
+                            <th className="text-left font-semibold text-slate-400 py-3 px-4 whitespace-nowrap">User</th>
+                            <th className="text-left font-semibold text-slate-400 py-3 px-4 whitespace-nowrap">Applied For</th>
+                            <th className="text-left font-semibold text-slate-400 py-3 px-4 whitespace-nowrap">Type</th>
+                            <th className="text-left font-semibold text-slate-400 py-3 px-4 whitespace-nowrap">Status</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
                           {usersList.filter(u => !u.isVerified && u.role === 'Student').slice(0, 3).map((u, i) => (
                             <tr className="hover:bg-slate-50 duration-150" key={i}>
-                              <td className="py-4"><div><p className="font-bold text-slate-800">{u.name}</p><p className="text-xs text-slate-500">{u.email}</p></div></td>
-                              <td className="py-4 text-slate-600 font-medium text-xs">N/A</td>
-                              <td className="py-4 text-slate-600 font-medium text-xs">{u.role}</td>
-                              <td className="py-4"><span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-50 text-amber-600">Pending</span></td>
+                               <td className="py-4 px-4 whitespace-nowrap"><div><p className="font-bold text-slate-800 text-xs">{u.name}</p><p className="text-[10px] text-slate-500">{u.email}</p></div></td>
+                               <td className="py-4 px-4 text-slate-600 font-medium text-xs whitespace-nowrap">N/A</td>
+                               <td className="py-4 px-4 text-slate-600 font-medium text-xs whitespace-nowrap">{u.role}</td>
+                               <td className="py-4 px-4 whitespace-nowrap">
+<span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-50 text-amber-600">Pending</span></td>
                             </tr>
                           ))}
                           {usersList.filter(u => !u.isVerified && u.role === 'Student').length === 0 && (
@@ -375,23 +457,23 @@ export default function AdminDashboard() {
                       <Users className="h-4 w-4" /> Add New User
                     </button>
                   </div>
-                  <div className="card-premium bg-white">
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-sm">
+                  <div className="card-premium bg-white p-0 overflow-hidden border border-slate-100">
+                    <div className="overflow-x-auto custom-scrollbar">
+                      <table className="w-full text-sm min-w-[800px]">
                         <thead>
                           <tr className="border-b border-slate-100">
-                            <th className="text-left font-semibold text-slate-400 py-3">User</th>
-                            <th className="text-left font-semibold text-slate-400 py-3">Email Address</th>
-                            <th className="text-left font-semibold text-slate-400 py-3">Phone</th>
-                            <th className="text-left font-semibold text-slate-400 py-3">Role</th>
-                            <th className="text-left font-semibold text-slate-400 py-3">Verification</th>
-                            <th className="text-left font-semibold text-slate-400 py-3">Actions</th>
+                            <th className="text-left font-semibold text-slate-400 py-3 px-4 whitespace-nowrap">User</th>
+                            <th className="text-left font-semibold text-slate-400 py-3 px-4 whitespace-nowrap">Email Address</th>
+                            <th className="text-left font-semibold text-slate-400 py-3 px-4 whitespace-nowrap">Phone</th>
+                            <th className="text-left font-semibold text-slate-400 py-3 px-4 whitespace-nowrap">Role</th>
+                            <th className="text-left font-semibold text-slate-400 py-3 px-4 whitespace-nowrap">Verification</th>
+                            <th className="text-left font-semibold text-slate-400 py-3 px-4 whitespace-nowrap">Actions</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
                           {usersList.map((u, i) => (
                             <tr className="hover:bg-slate-50 duration-150" key={i}>
-                              <td className="py-4">
+                              <td className="py-4 px-4 whitespace-nowrap">
                                 <div className="flex items-center gap-3">
                                   <div className="w-9 h-9 rounded-2xl bg-slate-100 flex items-center justify-center font-bold text-slate-700 text-sm shadow-soft">
                                     {u.name ? u.name[0].toUpperCase() : 'U'}
@@ -399,13 +481,20 @@ export default function AdminDashboard() {
                                   <p className="font-bold text-slate-800">{u.name}</p>
                                 </div>
                               </td>
-                              <td className="py-4 text-slate-500 font-medium text-xs">{u.email}</td>
-                              <td className="py-4 text-slate-500 font-medium text-xs">{u.phone || 'N/A'}</td>
-                              <td className="py-4 text-slate-600 font-semibold text-xs">{u.role}</td>
-                              <td className="py-4">
-                                <span className={`px-2.5 py-1 rounded-lg text-xs font-bold ${u.isVerified ? 'bg-green-50 text-green-600 border border-green-100' : 'bg-amber-50 text-amber-600 border border-amber-100'}`}>{u.isVerified ? 'Verified' : 'Pending'}</span>
+                              <td className="py-4 px-4 text-slate-600 font-medium whitespace-nowrap">{u.email}</td>
+                              <td className="py-4 px-4 text-slate-500 text-xs whitespace-nowrap font-mono">{u.phone || '98765-43210'}</td>
+                              <td className="py-4 px-4 whitespace-nowrap">
+                                <span className={`px-2.5 py-1 rounded-xl text-xs font-bold ring-1 ring-inset ${u.role === 'Admin' ? 'bg-purple-50 text-purple-700 ring-purple-100' : u.role === 'Counsellor' ? 'bg-indigo-50 text-indigo-700 ring-indigo-100' : 'bg-blue-50 text-blue-700 ring-blue-100'}`}>
+                                  {u.role}
+                                </span>
                               </td>
-                              <td className="py-4">
+                              <td className="py-4 px-4 whitespace-nowrap">
+                                <span className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold leading-none ${u.isVerified ? 'bg-green-50 text-green-700' : 'bg-amber-50 text-amber-700'}`}>
+                                  <div className={`w-1.5 h-1.5 rounded-full ${u.isVerified ? 'bg-green-600 animate-pulse' : 'bg-amber-500'}`}></div>
+                                  {u.isVerified ? 'Verified' : 'Pending'}
+                                </span>
+                              </td>
+                              <td className="py-4 px-4 whitespace-nowrap">
                                 <div className="flex items-center gap-2">
                                   {!u.isVerified && (
                                     <button
@@ -438,7 +527,7 @@ export default function AdminDashboard() {
                                         try {
                                           await userApi.delete(u.id);
                                           fetchUsers();
-                                        } catch (e) { alert('Delete failed setups threshold configs.'); }
+                                        } catch (e) { showAlert('Delete failed setups threshold configs.'); }
                                       }
                                     }}
                                     className="bg-red-50 hover:bg-red-100 text-red-500 p-2 rounded-xl border border-red-100 duration-150 cursor-pointer shadow-soft"
@@ -548,7 +637,7 @@ export default function AdminDashboard() {
                     <button
                       onClick={() => {
                         setCurrentExamEdit(null);
-                        setExamFormData({ name: '', date: '', applicants: '', board: 'NTA', stream: 'Engineering', url: '' });
+                        setExamFormData({ name: '', date: '', applicants: '', board: 'NTA', stream: 'Engineering', url: '', title: '', collegeCount: '', colorClass: 'bg-blue-50 text-blue-600 border-blue-100/50' });
                         setIsExamModalOpen(true);
                       }}
                       className="bg-primary-600 hover:bg-primary-700 text-white font-medium px-4 py-2.5 rounded-xl text-sm flex items-center gap-2 cursor-pointer duration-200"
@@ -599,7 +688,7 @@ export default function AdminDashboard() {
                         <button
                           onClick={() => {
                             setCurrentExamEdit(exam);
-                            setExamFormData({ name: exam.name, date: exam.date, applicants: exam.applicants, board: exam.board, stream: exam.stream || 'Engineering', url: exam.url || 'https://example.com' });
+                            setExamFormData({ name: exam.name, date: exam.date, applicants: exam.applicants, board: exam.board, stream: exam.stream || 'Engineering', url: exam.url || 'https://example.com', title: exam.title || '', collegeCount: exam.collegeCount || '', colorClass: exam.colorClass || 'bg-blue-50 text-blue-600 border-blue-100/50' });
                             setIsExamModalOpen(true);
                           }}
                           className="w-full bg-slate-50 hover:bg-slate-100 text-slate-700 font-semibold py-2 rounded-xl text-sm transition duration-200 cursor-pointer"
@@ -645,25 +734,44 @@ export default function AdminDashboard() {
                             <label className="text-xs font-semibold text-slate-600">Official Website/Apply Link</label>
                             <input type="url" value={examFormData.url} onChange={e => setExamFormData({ ...examFormData, url: e.target.value })} placeholder="e.g., https://jeemain.nta.nic.in" className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500 font-medium" />
                           </div>
+                          <div className="space-y-1">
+                            <label className="text-xs font-semibold text-slate-600">Display Title (For Landing Page)</label>
+                            <input type="text" value={examFormData.title} onChange={e => setExamFormData({ ...examFormData, title: e.target.value })} placeholder="e.g., NEET UG" className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500 font-medium" />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-xs font-semibold text-slate-600">College Count (For Landing Page)</label>
+                            <input type="text" value={examFormData.collegeCount} onChange={e => setExamFormData({ ...examFormData, collegeCount: e.target.value })} placeholder="e.g., 200+ Colleges" className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500 font-medium" />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-xs font-semibold text-slate-600">Card Theme Color</label>
+                            <select value={examFormData.colorClass} onChange={e => setExamFormData({ ...examFormData, colorClass: e.target.value })} className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-medium">
+                              <option value="bg-red-50 text-red-600 border-red-100/50">Red</option>
+                              <option value="bg-blue-50 text-blue-600 border-blue-100/50">Blue</option>
+                              <option value="bg-purple-50 text-purple-600 border-purple-100/50">Purple</option>
+                              <option value="bg-orange-50 text-orange-600 border-orange-100/50">Orange</option>
+                              <option value="bg-green-50 text-green-600 border-green-100/50">Green</option>
+                              <option value="bg-slate-50 text-slate-600 border-slate-100/50">Gray/Slate</option>
+                            </select>
+                          </div>
                         </div>
                         <div className="flex gap-2 justify-end mt-6 pt-4 border-t border-slate-100">
                           <button onClick={() => setIsExamModalOpen(false)} className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold px-5 py-2.5 rounded-xl text-xs duration-150">Cancel</button>
                           <button
                             onClick={async () => {
                               if (!examFormData.name || !examFormData.date) {
-                                alert('Please fill all required information tags.');
+                                showAlert('Please fill all required information tags.');
                                 return;
                               }
                               try {
                                 if (currentExamEdit) {
-                                  await examApi.update(currentExamEdit.id, { name: examFormData.name, date: examFormData.date, applicants: examFormData.applicants, board: examFormData.board, stream: examFormData.stream, officialUrl: examFormData.url });
+                                  await examApi.update(currentExamEdit.id, { name: examFormData.name, date: examFormData.date, applicants: examFormData.applicants, board: examFormData.board, stream: examFormData.stream, officialUrl: examFormData.url, title: examFormData.title, collegeCount: examFormData.collegeCount, colorClass: examFormData.colorClass });
                                 } else {
-                                  await examApi.create({ name: examFormData.name, date: examFormData.date, applicants: examFormData.applicants, board: examFormData.board, stream: examFormData.stream, officialUrl: examFormData.url });
+                                  await examApi.create({ name: examFormData.name, date: examFormData.date, applicants: examFormData.applicants, board: examFormData.board, stream: examFormData.stream, officialUrl: examFormData.url, title: examFormData.title, collegeCount: examFormData.collegeCount, colorClass: examFormData.colorClass });
                                 }
                                 fetchExams();
                                 setIsExamModalOpen(false);
                               } catch (e) {
-                                alert('Exam saving failed setups threshold configurations dashboards preset.');
+                                showAlert('Exam saving failed setups threshold configurations dashboards preset.');
                               }
                             }}
                             className="bg-primary-600 hover:bg-primary-700 text-white font-bold px-5 py-2.5 rounded-xl text-xs shadow-soft duration-150"
@@ -695,26 +803,26 @@ export default function AdminDashboard() {
                       <Compass className="h-4 w-4" /> Add College
                     </button>
                   </div>
-                  <div className="card-premium bg-white">
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-sm">
+                  <div className="card-premium bg-white p-0 overflow-hidden border border-slate-100">
+                    <div className="overflow-x-auto custom-scrollbar shadow-inner">
+                      <table className="w-full text-sm min-w-[800px]">
                         <thead>
                           <tr className="border-b border-slate-100">
-                            <th className="text-left font-semibold text-slate-400 py-3">College Name</th>
-                            <th className="text-left font-semibold text-slate-400 py-3">Location</th>
-                            <th className="text-left font-semibold text-slate-400 py-3">NIRF Rank</th>
-                            <th className="text-left font-semibold text-slate-400 py-3">Avg Package</th>
-                            <th className="text-left font-semibold text-slate-400 py-3">Actions</th>
+                            <th className="text-left font-semibold text-slate-400 py-3 px-4 whitespace-nowrap">College Name</th>
+                            <th className="text-left font-semibold text-slate-400 py-3 px-4 whitespace-nowrap">Location</th>
+                            <th className="text-left font-semibold text-slate-400 py-3 px-4 whitespace-nowrap">NIRF Rank</th>
+                            <th className="text-left font-semibold text-slate-400 py-3 px-4 whitespace-nowrap">Avg Package</th>
+                            <th className="text-left font-semibold text-slate-400 py-3 px-4 whitespace-nowrap">Actions</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
                           {collegesList.map((c, i) => (
                             <tr className="hover:bg-slate-50 duration-150" key={c.id}>
-                              <td className="py-4 font-bold text-slate-800">{c.name}</td>
-                              <td className="py-4 text-slate-600 font-medium">{c.location}</td>
-                              <td className="py-4 font-semibold text-slate-700">{c.nirfRank}</td>
-                              <td className="py-4 font-semibold text-green-600">{c.avgPackage || 'N/A'}</td>
-                              <td className="py-4">
+                              <td className="py-4 px-4 font-bold text-slate-800 whitespace-nowrap">{c.name}</td>
+                              <td className="py-4 px-4 text-slate-600 font-medium whitespace-nowrap">{c.location}</td>
+                              <td className="py-4 px-4 font-semibold text-slate-700 whitespace-nowrap">{c.nirfRank}</td>
+                              <td className="py-4 px-4 font-semibold text-green-600 whitespace-nowrap">{c.avgPackage || 'N/A'}</td>
+                              <td className="py-4 px-4 whitespace-nowrap">
                                 <div className="flex items-center gap-2">
                                   <button
                                     onClick={() => {
@@ -827,31 +935,31 @@ export default function AdminDashboard() {
                       <Award className="h-4 w-4" /> Add Cutoff
                     </button>
                   </div>
-                  <div className="card-premium bg-white">
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-sm">
+                  <div className="card-premium bg-white p-0 overflow-hidden border border-slate-100">
+                    <div className="overflow-x-auto custom-scrollbar shadow-inner">
+                      <table className="w-full text-sm min-w-[900px]">
                         <thead>
                           <tr className="border-b border-slate-100">
-                            <th className="text-left font-semibold text-slate-400 py-3">College</th>
-                            <th className="text-left font-semibold text-slate-400 py-3">Branch</th>
-                            <th className="text-left font-semibold text-slate-400 py-3">Category</th>
-                            <th className="text-left font-semibold text-slate-400 py-3">Rank</th>
-                            <th className="text-left font-semibold text-slate-400 py-3">Round</th>
-                            <th className="text-left font-semibold text-slate-400 py-3">Quota</th>
-                            <th className="text-left font-semibold text-slate-400 py-3">Year</th>
-                            <th className="text-right font-semibold text-slate-400 py-3 pr-4">Actions</th>
+                            <th className="text-left font-semibold text-slate-400 py-3 px-4 whitespace-nowrap">College</th>
+                            <th className="text-left font-semibold text-slate-400 py-3 px-4 whitespace-nowrap">Branch</th>
+                            <th className="text-left font-semibold text-slate-400 py-3 px-4 whitespace-nowrap">Category</th>
+                            <th className="text-left font-semibold text-slate-400 py-3 px-4 whitespace-nowrap">Rank</th>
+                            <th className="text-left font-semibold text-slate-400 py-3 px-4 whitespace-nowrap">Round</th>
+                            <th className="text-left font-semibold text-slate-400 py-3 px-4 whitespace-nowrap">Quota</th>
+                            <th className="text-left font-semibold text-slate-400 py-3 px-4 whitespace-nowrap">Year</th>
+                            <th className="text-right font-semibold text-slate-400 py-3 px-4 whitespace-nowrap pr-4">Actions</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
                           {cutoffsList.map((d, i) => (
                             <tr className="hover:bg-slate-50 duration-150" key={i}>
-                              <td className="py-4 font-bold text-slate-800">{d.college?.name || 'N/A'}</td>
-                              <td className="py-4 text-slate-600 font-medium">{d.branch}</td>
-                              <td className="py-4 text-slate-500">{d.category}</td>
-                              <td className="py-4 font-bold text-slate-700">{d.closingRank}</td>
-                              <td className="py-4 text-slate-500 font-medium">{d.round || '1'}</td>
-                              <td className="py-4 text-slate-500 text-xs">{d.quota || 'All India'}</td>
-                              <td className="py-4 text-slate-500">{d.year || '2025'}</td>
+                              <td className="py-4 px-4 font-bold text-slate-800 whitespace-nowrap">{d.college?.name || 'N/A'}</td>
+                              <td className="py-4 px-4 text-slate-600 font-medium whitespace-nowrap">{d.branch}</td>
+                              <td className="py-4 px-4 text-slate-500 whitespace-nowrap">{d.category}</td>
+                              <td className="py-4 px-4 font-bold text-slate-700 whitespace-nowrap">{d.closingRank}</td>
+                              <td className="py-4 px-4 text-slate-500 font-medium whitespace-nowrap">{d.round || '1'}</td>
+                              <td className="py-4 px-4 text-slate-500 text-xs whitespace-nowrap">{d.quota || 'All India'}</td>
+                              <td className="py-4 px-4 text-slate-500 whitespace-nowrap">{d.year || '2025'}</td>
                               <td className="py-4 text-right pr-4">
                                 <div className="flex items-center justify-end gap-1">
                                   <button onClick={() => { setCutoffFormData({ ...d, collegeId: d.collegeId.toString(), examId: d.examId.toString() }); setIsCutoffModalOpen(true); }} className="hover:bg-slate-100 p-1.5 rounded-lg text-slate-600 cursor-pointer duration-150">
@@ -955,6 +1063,338 @@ export default function AdminDashboard() {
                   )}
               </>
             )}
+
+              {activeTab === 'scholarships' && (
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h1 className="text-2xl font-bold text-slate-900">Scholarships Management</h1>
+                      <p className="text-slate-500 text-sm mt-0.5">Add, edit or remove scholarship opportunities shown to students.</p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setCurrentScholarshipEdit(null);
+                        setScholarshipFormData({ name: '', description: '', amount: '', eligibility: '', officialUrl: '' });
+                        setIsScholarshipModalOpen(true);
+                      }}
+                      className="bg-primary-600 hover:bg-primary-700 text-white font-bold px-5 py-2.5 rounded-xl shadow-soft text-xs duration-150 flex items-center gap-2"
+                    >
+                      + Add Scholarship
+                    </button>
+                  </div>
+
+                  <div className="grid md:grid-cols-3 gap-6">
+                    {scholarshipsList.length === 0 ? (
+                      <div className="col-span-3 card-premium bg-white flex flex-col items-center justify-center py-20 text-center">
+                        <div className="bg-primary-50 p-4 rounded-2xl text-primary-600 mb-4">
+                          <GraduationCap className="h-8 w-8" />
+                        </div>
+                        <h3 className="font-bold text-slate-800">No Scholarships Yet</h3>
+                        <p className="text-xs text-slate-400 mt-1 max-w-xs">Click "+ Add Scholarship" to add the first one. It will appear on the Student Dashboard instantly.</p>
+                      </div>
+                    ) : scholarshipsList.map((s) => (
+                      <div key={s.id} className="card-premium bg-white flex flex-col justify-between h-full">
+                        <div>
+                          <div className="flex justify-between items-start mb-3">
+                            <div className="bg-primary-50 text-primary-600 p-2.5 rounded-xl">
+                              <GraduationCap className="h-5 w-5" />
+                            </div>
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => {
+                                  setCurrentScholarshipEdit(s);
+                                  setScholarshipFormData({ name: s.name, description: s.description, amount: s.amount, eligibility: s.eligibility || '', officialUrl: s.officialUrl || '' });
+                                  setIsScholarshipModalOpen(true);
+                                }}
+                                className="p-1.5 bg-slate-50 hover:bg-primary-50 rounded-lg text-slate-500 hover:text-primary-600 duration-150"
+                              >
+                                <Edit3 className="h-4 w-4" />
+                              </button>
+                              <button
+                                onClick={() => setConfirmDialog({
+                                  isOpen: true,
+                                  t: 'Delete Scholarship',
+                                  m: `Are you sure you want to delete "${s.name}"? This will remove it from the student dashboard.`,
+                                  onConfirm: async () => {
+                                    try {
+                                      await scholarshipApi.delete(s.id);
+                                      await fetchScholarships();
+                                      setCustomAlert({ isOpen: true, t: 'Deleted!', m: 'Scholarship removed successfully.', tp: 'success' });
+                                    } catch (e) {
+                                      setCustomAlert({ isOpen: true, t: 'Error', m: 'Failed to delete scholarship.', tp: 'error' });
+                                    }
+                                  }
+                                })}
+                                className="p-1.5 bg-slate-50 hover:bg-red-50 rounded-lg text-slate-500 hover:text-red-500 duration-150"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </div>
+                          </div>
+                          <h3 className="font-bold text-slate-800 text-sm leading-snug">{s.name}</h3>
+                          <p className="text-primary-600 font-bold text-xs mt-1">{s.amount}</p>
+                          <p className="text-slate-500 text-xs mt-2 leading-relaxed">{s.description}</p>
+                          {s.eligibility && (
+                            <p className="text-slate-400 text-[10px] mt-2 leading-relaxed border-t border-slate-50 pt-2">
+                              <span className="font-bold text-slate-500">Eligible: </span>{s.eligibility}
+                            </p>
+                          )}
+                        </div>
+                        {s.officialUrl && (
+                          <a href={s.officialUrl} target="_blank" rel="noreferrer" className="text-xs text-primary-600 font-semibold flex items-center gap-1 mt-4 hover:underline">
+                            View Link <ArrowRight className="h-3 w-3" />
+                          </a>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Scholarship Add/Edit Modal */}
+                  <AnimatePresence>
+                    {isScholarshipModalOpen && (
+                      <div className="fixed inset-0 bg-black/40 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                          animate={{ opacity: 1, scale: 1, y: 0 }}
+                          exit={{ opacity: 0, scale: 0.85, y: 20 }}
+                          className="bg-white rounded-3xl shadow-2xl w-full max-w-lg p-6 space-y-4 border border-slate-100"
+                        >
+                          <div className="flex justify-between items-center border-b border-slate-50 pb-3">
+                            <h3 className="font-bold text-slate-800 text-base">
+                              {currentScholarshipEdit ? 'Edit Scholarship' : 'Add New Scholarship'}
+                            </h3>
+                            <button onClick={() => setIsScholarshipModalOpen(false)} className="p-1.5 hover:bg-slate-100 rounded-lg duration-150">
+                              <X className="h-4 w-4 text-slate-500" />
+                            </button>
+                          </div>
+
+                          <div className="grid grid-cols-1 gap-3">
+                            <div className="space-y-1">
+                              <label className="text-xs font-semibold text-slate-600">Scholarship Name *</label>
+                              <input
+                                type="text"
+                                value={scholarshipFormData.name}
+                                onChange={e => setScholarshipFormData({ ...scholarshipFormData, name: e.target.value })}
+                                placeholder="e.g. Merit Excellence Scholarship"
+                                className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500 font-medium"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-xs font-semibold text-slate-600">Amount / Benefit *</label>
+                              <input
+                                type="text"
+                                value={scholarshipFormData.amount}
+                                onChange={e => setScholarshipFormData({ ...scholarshipFormData, amount: e.target.value })}
+                                placeholder="e.g. Up to 100% Waiver / ₹50,000"
+                                className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500 font-medium"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-xs font-semibold text-slate-600">Description *</label>
+                              <textarea
+                                value={scholarshipFormData.description}
+                                onChange={e => setScholarshipFormData({ ...scholarshipFormData, description: e.target.value })}
+                                placeholder="Brief description of this scholarship"
+                                rows={2}
+                                className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500 font-medium resize-none"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-xs font-semibold text-slate-600">Eligibility Criteria</label>
+                              <input
+                                type="text"
+                                value={scholarshipFormData.eligibility}
+                                onChange={e => setScholarshipFormData({ ...scholarshipFormData, eligibility: e.target.value })}
+                                placeholder="e.g. Top 10% rank holders in JEE/NEET"
+                                className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500 font-medium"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-xs font-semibold text-slate-600">Official Apply URL</label>
+                              <input
+                                type="url"
+                                value={scholarshipFormData.officialUrl}
+                                onChange={e => setScholarshipFormData({ ...scholarshipFormData, officialUrl: e.target.value })}
+                                placeholder="https://example.com/apply"
+                                className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500 font-medium"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="flex gap-2 justify-end pt-3 border-t border-slate-100">
+                            <button
+                              onClick={() => setIsScholarshipModalOpen(false)}
+                              className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-5 py-2.5 rounded-xl text-xs font-semibold duration-150"
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              onClick={async () => {
+                                if (!scholarshipFormData.name || !scholarshipFormData.amount || !scholarshipFormData.description) {
+                                  setCustomAlert({ isOpen: true, t: 'Missing Fields', m: 'Please fill Name, Amount, and Description.', tp: 'error' });
+                                  return;
+                                }
+                                try {
+                                  const payload = {
+                                    name: scholarshipFormData.name,
+                                    description: scholarshipFormData.description,
+                                    amount: scholarshipFormData.amount,
+                                    eligibility: scholarshipFormData.eligibility,
+                                    officialUrl: scholarshipFormData.officialUrl
+                                  };
+                                  if (currentScholarshipEdit) {
+                                    await scholarshipApi.update(currentScholarshipEdit.id, payload);
+                                    setCustomAlert({ isOpen: true, t: 'Updated!', m: 'Scholarship updated successfully. Students will see the new data.', tp: 'success' });
+                                  } else {
+                                    await scholarshipApi.create(payload);
+                                    setCustomAlert({ isOpen: true, t: 'Added!', m: 'New scholarship added. Students can now see and apply for it!', tp: 'success' });
+                                  }
+                                  await fetchScholarships();
+                                  setIsScholarshipModalOpen(false);
+                                } catch (e) {
+                                  setCustomAlert({ isOpen: true, t: 'Error', m: e.response?.data?.error || 'Failed to save scholarship.', tp: 'error' });
+                                }
+                              }}
+                              className="bg-primary-600 hover:bg-primary-700 text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow-soft duration-150"
+                            >
+                              {currentScholarshipEdit ? 'Update Scholarship' : 'Add Scholarship'}
+                            </button>
+                          </div>
+                        </motion.div>
+                      </div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              )}
+
+              {activeTab === 'packages' && (
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h1 className="text-2xl font-bold text-slate-900">VIP Packages Management</h1>
+                      <p className="text-slate-500 text-sm mt-0.5">Add, edit or remove subscription plans for students.</p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setCurrentPackageEdit(null);
+                        setPackageFormData({ name: '', price: '', benefits: '', actionText: '', isFeatured: false });
+                        setIsPackageModalOpen(true);
+                      }}
+                      className="bg-primary-600 hover:bg-primary-700 text-white font-bold px-5 py-2.5 rounded-xl shadow-soft text-xs duration-150 flex items-center gap-2"
+                    >
+                      + Add Package
+                    </button>
+                  </div>
+
+                  <div className="grid md:grid-cols-3 gap-6">
+                    {packagesList.length === 0 ? (
+                      <div className="col-span-3 card-premium bg-white flex flex-col items-center justify-center py-20 text-center">
+                        <div className="bg-primary-50 p-4 rounded-2xl text-primary-600 mb-4">
+                          <Award className="h-8 w-8" />
+                        </div>
+                        <h3 className="font-bold text-slate-800">No Packages Yet</h3>
+                        <p className="text-xs text-slate-400 mt-1 max-w-xs">Click "+ Add Package" to add the first one.</p>
+                      </div>
+                    ) : packagesList.map((p) => (
+                      <div key={p.id} className="card-premium bg-white flex flex-col justify-between h-full">
+                        <div>
+                          <div className="flex justify-between items-start mb-3">
+                            <div className="bg-primary-50 text-primary-600 p-2.5 rounded-xl">
+                              <Award className="h-5 w-5" />
+                            </div>
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => {
+                                  setCurrentPackageEdit(p);
+                                  setPackageFormData({ name: p.name, price: p.price, benefits: Array.isArray(p.benefits) ? p.benefits.join(', ') : p.benefits, actionText: p.actionText, isFeatured: p.isFeatured });
+                                  setIsPackageModalOpen(true);
+                                }}
+                                className="p-1.5 bg-slate-50 hover:bg-primary-50 rounded-lg text-slate-500 hover:text-primary-600 duration-150"
+                              >
+                                <Edit3 className="h-4 w-4" />
+                              </button>
+                              <button
+                                onClick={() => setConfirmDialog({
+                                  isOpen: true,
+                                  t: 'Delete Package',
+                                  m: `Are you sure you want to delete "${p.name}"?`,
+                                  onConfirm: async () => {
+                                    try {
+                                      await packageApi.delete(p.id);
+                                      await fetchPackages();
+                                      setCustomAlert({ isOpen: true, t: 'Deleted!', m: 'Package removed successfully.', tp: 'success' });
+                                    } catch (e) {
+                                      setCustomAlert({ isOpen: true, t: 'Error', m: 'Failed to delete package.', tp: 'error' });
+                                    }
+                                  }
+                                })}
+                                className="p-1.5 bg-slate-50 hover:bg-red-50 rounded-lg text-slate-500 hover:text-red-500 duration-150"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </div>
+                          </div>
+                          <h3 className="font-bold text-slate-800 text-sm leading-snug">{p.name} Package</h3>
+                          <p className="text-primary-600 font-bold text-xs mt-1">{p.price}</p>
+                          <ul className="space-y-1 mt-3">
+                            {(Array.isArray(p.benefits) ? p.benefits : JSON.parse(p.benefits || '[]')).map((b, idx) => (
+                              <li className="flex items-start gap-1.5 text-slate-500 text-[11px]" key={idx}><Check className="h-3 w-3 text-green-500 mt-0.5 flex-shrink-0" /> {b}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Add/Edit Modal */}
+                  <AnimatePresence>
+                    {isPackageModalOpen && (
+                      <div className="fixed inset-0 bg-black/40 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+                        <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.85, y: 20 }} className="bg-white rounded-3xl shadow-2xl w-full max-w-lg p-6 space-y-4 border border-slate-100">
+                          <h3 className="font-bold text-slate-800 text-base border-b border-slate-50 pb-2">{currentPackageEdit ? 'Edit Package' : 'Add New Package'}</h3>
+                          <div className="grid grid-cols-1 gap-3">
+                            <div className="space-y-1">
+                              <label className="text-xs font-semibold text-slate-600">Package Name</label>
+                              <input type="text" value={packageFormData.name} onChange={e => setPackageFormData({ ...packageFormData, name: e.target.value })} placeholder="e.g. Standard" className="w-full border border-slate-200 rounded-xl px-4 py-2 text-sm" />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-xs font-semibold text-slate-600">Price Display</label>
+                              <input type="text" value={packageFormData.price} onChange={e => setPackageFormData({ ...packageFormData, price: e.target.value })} placeholder="e.g. ₹499/Month" className="w-full border border-slate-200 rounded-xl px-4 py-2 text-sm" />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-xs font-semibold text-slate-600">Benefits (Comma separated)</label>
+                              <textarea value={packageFormData.benefits} onChange={e => setPackageFormData({ ...packageFormData, benefits: e.target.value })} placeholder="Benefit 1, Benefit 2" rows={2} className="w-full border border-slate-200 rounded-xl px-4 py-2 text-sm resize-none" />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-xs font-semibold text-slate-600">Action Button Text</label>
+                              <input type="text" value={packageFormData.actionText} onChange={e => setPackageFormData({ ...packageFormData, actionText: e.target.value })} placeholder="e.g. Upgrade Now" className="w-full border border-slate-200 rounded-xl px-4 py-2 text-sm" />
+                            </div>
+                            <div className="flex items-center gap-2 pt-1 border-t border-slate-50">
+                              <input type="checkbox" checked={packageFormData.isFeatured} onChange={e => setPackageFormData({ ...packageFormData, isFeatured: e.target.checked })} className="rounded text-primary-600" id="featured_check" />
+                              <label htmlFor="featured_check" className="text-xs text-slate-600 font-medium">Highlight as Best Value</label>
+                            </div>
+                          </div>
+                          <div className="flex gap-2 justify-end pt-3 border-t border-slate-100">
+                            <button onClick={() => setIsPackageModalOpen(false)} className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-5 py-2.5 rounded-xl text-xs font-semibold">Cancel</button>
+                            <button onClick={async () => {
+                                if (!packageFormData.name || !packageFormData.price) return showAlert('Fill name & price');
+                                try {
+                                  const list = packageFormData.benefits.split(',').map(b => b.trim()).filter(Boolean);
+                                  const payload = { ...packageFormData, benefits: list };
+                                  if (currentPackageEdit) await packageApi.update(currentPackageEdit.id, payload);
+                                  else await packageApi.create(payload);
+                                  fetchPackages();
+                                  setIsPackageModalOpen(false);
+                                  setCustomAlert({ isOpen: true, t: 'Success', m: 'Package saved!', tp: 'success' });
+                                } catch (e) { console.error(e); }
+                            }} className="bg-primary-600 hover:bg-primary-700 text-white px-5 py-2.5 rounded-xl text-xs font-bold">Save</button>
+                          </div>
+                        </motion.div>
+                      </div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              )}
 
               {activeTab === 'settings' && (
                 <div className="space-y-6 max-w-3xl">
@@ -1077,18 +1517,46 @@ export default function AdminDashboard() {
           {confirmDialog.isOpen && (
             <div className="fixed inset-0 bg-black/40 backdrop-blur-md z-[998] flex items-center justify-center p-4">
               <motion.div initial={{ opacity: 0, scale: 0.85, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.8 }} className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl space-y-4 text-center border border-slate-50">
-                <div className="p-4 rounded-full mx-auto w-16 h-16 bg-amber-50 flex items-center justify-center">
-                  <ShieldAlert className="h-8 w-8 text-amber-500" />
+                <div className={`p-4 rounded-full mx-auto w-16 h-16 ${confirmDialog.t?.includes('Verify') ? 'bg-green-50' : 'bg-amber-50'} flex items-center justify-center`}>
+                  {confirmDialog.t?.includes('Verify') ? <Check className="h-8 w-8 text-green-600" /> : <ShieldAlert className="h-8 w-8 text-amber-500" />}
                 </div>
                 <h3 className="font-bold text-lg text-slate-800">{confirmDialog.t}</h3>
                 <p className="text-slate-500 text-sm leading-relaxed">{confirmDialog.m}</p>
                 <div className="pt-2 grid grid-cols-2 gap-3">
                   <button onClick={() => setConfirmDialog({ ...confirmDialog, isOpen: false })} className="w-full bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold py-2.5 rounded-xl text-xs duration-150">Cancel</button>
-                  <button onClick={() => { if (confirmDialog.onConfirm) confirmDialog.onConfirm(); setConfirmDialog({ ...confirmDialog, isOpen: false }); }} className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2.5 rounded-xl text-xs shadow-soft duration-150">Yes, Confirm</button>
+                  <button onClick={() => { if (confirmDialog.onConfirm) confirmDialog.onConfirm(); setConfirmDialog({ ...confirmDialog, isOpen: false }); }} className={`w-full ${confirmDialog.t?.includes('Verify') ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'} text-white font-semibold py-2.5 rounded-xl text-xs shadow-soft duration-150`}>Yes, Confirm</button>
                 </div>
               </motion.div>
             </div>
           )}
+        </AnimatePresence>
+          
+        <AnimatePresence>
+          {isLogoutModalOpen && (
+              <div className="fixed inset-0 bg-black/40 backdrop-blur-md z-[999] flex items-center justify-center p-4">
+                <motion.div initial={{ opacity: 0, scale: 0.85, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.8, y: 20 }} className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl text-center">
+                  <div className="p-4 rounded-full mx-auto w-16 h-16 bg-red-50 flex items-center justify-center mb-4">
+                    <LogOut className="h-8 w-8 text-red-500 animate-pulse" />
+                  </div>
+                  <h3 className="font-bold text-lg text-slate-800 mb-2">Ready to leave?</h3>
+                  <p className="text-slate-500 text-sm">You are about to log out from your session. You'll need to sign in again to access your dashboard.</p>
+                  
+                  <div className="pt-6 grid grid-cols-2 gap-3">
+                    <button onClick={() => setIsLogoutModalOpen(false)} className="w-full bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold py-3 rounded-xl text-sm duration-150">Cancel</button>
+                    <button 
+                      onClick={() => {
+                        localStorage.removeItem('user');
+                        localStorage.removeItem('token');
+                        navigate('/login', { replace: true });
+                      }} 
+                      className="w-full bg-red-500 hover:bg-red-600 text-white font-semibold py-3 rounded-xl text-sm shadow-soft duration-150 flex items-center justify-center gap-2"
+                    >
+                      <LogOut className="h-4 w-4" /> Log Out
+                    </button>
+                  </div>
+                </motion.div>
+              </div>
+            )}
         </AnimatePresence>
       </div>
     </div>

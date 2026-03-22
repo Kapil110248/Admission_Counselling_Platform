@@ -1,5 +1,6 @@
 const prisma = require('../prisma');
 const bcrypt = require('bcryptjs'); // Needed for password changes thresholds framing layout setups thresholds configuration setting overlays.
+const { createSystemNotification } = require('./notificationController');
 
 exports.getUsers = async (req, res) => {
   try {
@@ -30,6 +31,13 @@ exports.updateUser = async (req, res) => {
       where: { id: parseInt(id) },
       data: { name, email, role, isVerified: Boolean(isVerified), phone, specialized }
     });
+
+    await createSystemNotification(
+      parseInt(id),
+      'Profile Updated',
+      'Your account profile or verification status was updated by the Administrator.'
+    );
+
     res.json(user);
   } catch (error) {
     res.status(400).json({ error: 'Update failed setups accurate layouts trigger dashboards config.' });
@@ -86,5 +94,21 @@ exports.changePassword = async (req, res) => {
      res.json({ message: 'Password updated successfully setups threshold.' });
   } catch (error) {
      res.status(500).json({ error: 'Failed updating passwords setups thresholds framing layout.' });
+  }
+};
+
+exports.upgradePlan = async (req, res) => {
+  try {
+    const { id, plan } = req.body;
+    if (!id || !plan) return res.status(400).json({ error: 'Missing parameters setups threshold.' });
+
+    await prisma.user.update({
+      where: { id: parseInt(id) },
+      data: { currentPlan: plan }
+    });
+
+    res.json({ message: `Successfully upgraded to ${plan}!` });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to upgrade plan.' });
   }
 };

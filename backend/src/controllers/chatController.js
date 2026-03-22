@@ -1,4 +1,5 @@
 const prisma = require('../prisma');
+const { createSystemNotification } = require('./notificationController');
 
 exports.getMessages = async (req, res) => {
   try {
@@ -37,8 +38,43 @@ exports.sendMessage = async (req, res) => {
       }
     });
 
+    const senderData = await prisma.user.findUnique({ where: { id: parseInt(senderId) }, select: { name: true } });
+    const senderName = senderData ? senderData.name : 'Someone';
+    await createSystemNotification(
+      parseInt(receiverId),
+      'New Message Received',
+      `You have a new message from ${senderName}.`
+    );
+
     res.json(newMessage);
   } catch (error) {
     res.status(500).json({ error: 'Failed to send message' });
+  }
+};
+
+exports.getConversations = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const uid = parseInt(userId);
+
+    const messages = await prisma.message.findMany({
+      where: { OR: [{ senderId: uid }, { receiverId: uid }] },
+      include: {
+        sender: { select: { id: true, name: true, email: true, specialized: true, isVerified: true } },
+        receiver: { select: { id: true, name: true, email: true, specialized: true, isVerified: true } }
+      }
+    });
+
+    const usersMap = new Map();
+    messages.forEach(m => {
+      const otherUser = m.senderId === uid ? m.receiver : m.sender;
+      if (otherUser && otherUser.id !== uid) {
+        usersMap.set(otherUser.id, otherUser);
+      }
+    });
+
+    res.json(Array.from(usersMap.values()));
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch conversations' });
   }
 };

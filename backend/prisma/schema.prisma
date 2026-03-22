@@ -14,6 +14,7 @@ model User {
   password     String
   role         String   @default("Student") // "Admin", "Student", "Counsellor"
   isVerified   Boolean  @default(false)
+  currentPlan  String   @default("Free") // "Free", "Standard", "VIP"
   phone        String?
   specialized  String?  // for Counselors (Medical, Engineering, General)
   createdAt    DateTime @default(now())
@@ -22,6 +23,9 @@ model User {
   counsellorSessions Session[] @relation("CounsellorSessions")
   sentMessages       Message[] @relation("SentMessages")
   receivedMessages   Message[] @relation("ReceivedMessages")
+  notifications      Notification[] @relation("UserNotifications")
+  enquiriesSent      CounsellingEnquiry[] @relation("StudentEnquiries")
+  enquiriesReceived  CounsellingEnquiry[] @relation("CounsellorEnquiries")
 }
 
 model Message {
@@ -35,6 +39,19 @@ model Message {
   receiver    User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
 }
 
+model CounsellingEnquiry {
+  id           Int      @id @default(autoincrement())
+  studentId    Int
+  counsellorId Int
+  subject      String
+  query        String   @db.Text
+  status       String   @default("Pending") // "Pending", "Approved", "Rejected"
+  createdAt    DateTime @default(now())
+
+  student      User     @relation("StudentEnquiries", fields: [studentId], references: [id])
+  counsellor   User     @relation("CounsellorEnquiries", fields: [counsellorId], references: [id])
+}
+
 model Exam {
   id           Int      @id @default(autoincrement())
   name         String
@@ -44,6 +61,9 @@ model Exam {
   stream       String?  // "Engineering", "Medical", etc.
   officialUrl  String?
   isActive     Boolean  @default(true)
+  title        String?  // Frontend UI - Title
+  collegeCount String?  // Frontend UI - Count
+  colorClass   String?  // Frontend UI - Styles
   cutoffs      Cutoff[]
 }
 
@@ -94,4 +114,25 @@ model Scholarship {
   eligibility  String?
   officialUrl  String?
   createdAt    DateTime @default(now())
+}
+
+model Package {
+  id          Int      @id @default(autoincrement())
+  name        String   // "Basic", "Standard", "VIP Full"
+  price       String   // "Free", "₹499/Month"
+  benefits    Json     // to store array of strings
+  actionText  String   // "Current Plan", "Upgrade Now"
+  isFeatured  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+}
+
+model Notification {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  title       String
+  message     String
+  isRead      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  user        User     @relation("UserNotifications", fields: [userId], references: [id])
 }

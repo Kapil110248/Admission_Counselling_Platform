@@ -93,9 +93,9 @@ export default function ExamDetails() {
           <Link to="/" className="inline-flex items-center gap-2 text-slate-600 hover:text-primary-600 font-medium transition">
             <ArrowLeft className="h-4 w-4" /> Back to Home
           </Link>
-          <button className="bg-primary-600 hover:bg-primary-700 text-white font-semibold px-4 py-2 rounded-xl shadow-soft text-sm">
+          <a href="/#predictors" className="bg-primary-600 hover:bg-primary-700 text-white font-semibold px-4 py-2 rounded-xl shadow-soft text-sm inline-block">
             Check Predictor
-          </button>
+          </a>
         </div>
       </div>
 
@@ -162,13 +162,13 @@ export default function ExamDetails() {
             {activeTab === 'cutoffs' && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="card-premium">
                 <h3 className="text-xl font-bold mb-4">Historical Cutoffs Trends</h3>
-                <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
+                <div className="overflow-x-auto custom-scrollbar shadow-inner rounded-2xl border border-slate-100">
+                    <table className="w-full text-sm min-w-[500px]">
                       <thead>
                         <tr className="border-b border-slate-100 bg-slate-50">
-                          <th className="text-left font-bold p-3 text-slate-600">Category</th>
-                          <th className="text-left font-bold p-3 text-slate-600">2025 Cutoff</th>
-                          <th className="text-left font-bold p-3 text-slate-600">2024 Cutoff</th>
+                          <th className="text-left font-bold p-3 text-slate-600 whitespace-nowrap">Category</th>
+                          <th className="text-left font-bold p-3 text-slate-600 whitespace-nowrap">2025 Cutoff</th>
+                          <th className="text-left font-bold p-3 text-slate-600 whitespace-nowrap">2024 Cutoff</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -217,7 +217,7 @@ export default function ExamDetails() {
                 <div className="absolute inset-x-0 inset-y-0 backdrop-blur-md z-10 flex flex-col items-center justify-center p-4">
                   <Lock className="h-6 w-6 text-white mb-2" />
                   <p className="font-semibold text-sm">Dashboard is Disabled</p>
-                  <button className="text-xs bg-white text-slate-900 font-bold px-3 py-1 bg-white/90 hover:bg-white rounded-md mt-2 shadow-soft">Unlock Now</button>
+                  <Link to="/login" className="text-xs bg-white text-slate-900 font-bold px-3 py-1 bg-white/90 hover:bg-white rounded-md mt-2 shadow-soft">Unlock Now</Link>
                 </div>
                 <div className="h-20 bg-white/10 rounded filter blur-sm"></div>
             </div>
@@ -228,7 +228,7 @@ export default function ExamDetails() {
             <div className="p-4 bg-primary-50 rounded-xl border border-primary-100">
                <span className="font-bold text-sm text-primary-800">Counselling Excellence Scholarship</span>
                <p className="text-xs text-slate-600 leading-relaxed mt-1">Provide 100% waiving support fees based on predict rankings.</p>
-               <button className="text-xs font-semibold text-primary-600 flex items-center gap-1 mt-2">Learn More <ChevronRight className="h-3 w-3" /></button>
+               <Link to="/login" className="text-xs font-semibold text-primary-600 flex items-center gap-1 mt-2">Learn More <ChevronRight className="h-3 w-3" /></Link>
             </div>
           </div>
         </div>

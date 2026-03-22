@@ -5,28 +5,35 @@ import {
 } from 'recharts';
 import { 
   LayoutDashboard, Compass, Star, GraduationCap, Bell, Search, 
-  Menu, X, CheckSquare, Clock, ArrowRight, Settings, LogOut, ChevronRight, Award, Users, ShieldAlert, BookOpen, MessageSquare
+  Menu, X, CheckSquare, Clock, ArrowRight, Settings, LogOut, ChevronRight, Award, Users, ShieldAlert, BookOpen, MessageSquare, ClipboardList
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import { userApi, sessionApi, chatApi } from '../api';
+import { Link, useNavigate } from 'react-router-dom';
+import { userApi, sessionApi, chatApi, notificationApi, enquiryApi } from '../api';
+import { useToast } from '../context/ToastContext';
 import { useRef } from 'react';
 import Preloader from '../components/Preloader';
+import { io } from 'socket.io-client';
 
 export default function CounsellorDashboard() {
+  const navigate = useNavigate();
+  const { showAlert } = useToast();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [activeTab, setActiveTab] = useState(localStorage.getItem('counsellorTab') || 'overview');
   const [isLoading, setIsLoading] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+  const [customAlert, setCustomAlert] = useState({ isOpen: false, t: '', m: '', tp: '' });
   
   // Schedule Session State Logic
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
   const [sessionFormData, setSessionFormData] = useState({ student: '', date: '', time: '', topic: 'Document Verification', url: '' });
-  const [customAlert, setCustomAlert] = useState({ isOpen: false, t: '', m: '', tp: 'success' });
 
   const handleTabChange = (tab) => {
     if (tab === activeTab) return;
     setIsLoading(true);
-    setIsNotificationsOpen(false); // close modal on tab change
+    setIsNotificationsOpen(false);
+    if (window.innerWidth < 768) setIsSidebarOpen(false);
     localStorage.setItem('counsellorTab', tab);
     setActiveTab(tab);
     setTimeout(() => setIsLoading(false), 600);
@@ -42,12 +49,14 @@ export default function CounsellorDashboard() {
     { id: 'overview', icon: LayoutDashboard, label: 'Dashboard' },
     { id: 'students', icon: Users, label: 'My Students' },
     { id: 'sessions', icon: Clock, label: 'Sessions' },
+    { id: 'enquiries', icon: ClipboardList, label: 'Student Enquiries' },
     { id: 'chat', icon: MessageSquare, label: 'Support Chat' },
     { id: 'settings', icon: Settings, label: 'Settings' },
   ];
 
   const [studentsList, setStudentsList] = useState([]);
   const [sessionsList, setSessionsList] = useState([]);
+  const [allStudentsForSchedule, setAllStudentsForSchedule] = useState([]);
   const [counsellorProfile, setCounsellorProfile] = useState({ name: 'Neha Gupta', email: 'neha@educounsel.com', phone: '+91 9876543211', specialized: 'IIT/NEET Guidance', id: null });
   const [passwordData, setPasswordData] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
   const [isUpdating, setIsUpdating] = useState(false);
@@ -59,6 +68,49 @@ export default function CounsellorDashboard() {
   const [chatInput, setChatInput] = useState('');
   const [isSendingMsg, setIsSendingMsg] = useState(false);
   const chatEndRef = useRef(null);
+
+  // Enquiry State
+  const [enquiriesList, setEnquiriesList] = useState([]);
+  const [isUpdatingEnquiry, setIsUpdatingEnquiry] = useState(false);
+
+  const fetchEnquiries = async (id) => {
+    try {
+      const res = await enquiryApi.getCounsellor(id);
+      setEnquiriesList(res.data);
+    } catch (e) { console.error('Enquiry fetch error:', e); }
+  };
+
+  const handleEnquiryStatus = async (id, status) => {
+    try {
+      setIsUpdatingEnquiry(true);
+      await enquiryApi.updateStatus(id, status);
+      showAlert(`Enquiry ${status} successfully!`, 'success');
+      fetchEnquiries(counsellorProfile.id);
+    } catch (e) {
+      showAlert(`Failed to ${status} enquiry.`);
+    } finally {
+      setIsUpdatingEnquiry(false);
+    }
+  };
+
+  const socketRef = useRef(null);
+  const selectedStudentRef = useRef(null);
+  useEffect(() => { selectedStudentRef.current = selectedChatStudent; }, [selectedChatStudent]);
+
+  // Load all students for scheduling dropdown to enable assigning any student flaws triggers overlay triggers
+  useEffect(() => {
+    if (isScheduleModalOpen) {
+      userApi.getAll()
+        .then(res => {
+          const filtered = res.data.filter(u => u.role === 'Student').map(u => ({ id: u.id, n: u.name }));
+          setAllStudentsForSchedule(filtered);
+          if (filtered.length > 0) {
+            setSessionFormData(prev => ({ ...prev, student: filtered[0].n }));
+          }
+        })
+        .catch(err => console.error('Load all students failed:', err));
+    }
+  }, [isScheduleModalOpen]);
 
   const handleUpdateProfile = async () => {
     try {
@@ -119,10 +171,23 @@ export default function CounsellorDashboard() {
         const userObj = JSON.parse(userStr);
         const userRes = await userApi.getProfile(userObj.id);
         setCounsellorProfile(userRes.data);
+
+        try {
+          const notifs = await notificationApi.getAll(userObj.id);
+          setNotifications(notifs.data);
+        } catch (e) { console.error('Notifications load error', e); }
       } catch (e) { console.error('Profile load error:', e); }
     };
     loadProfile();
   }, []);
+
+  const handleMarkAllRead = async () => {
+    if (!counsellorProfile.id) return;
+    try {
+      await notificationApi.markAllRead(counsellorProfile.id);
+      setNotifications(prev => prev.map(n => ({...n, read: true, isRead: true})));
+    } catch (e) { console.error('Failed to mark read', e); }
+  };
 
   // Per-tab lazy loader
   useEffect(() => {
@@ -136,29 +201,41 @@ export default function CounsellorDashboard() {
       try {
         if (tab === 'overview' || tab === 'students' || tab === 'chat') {
           if (studentsList.length === 0) {
-            const resUsers = await userApi.getAll();
-            const mapped = resUsers.data.filter(u => u.role === 'Student').map(u => ({
-              id: u.id, n: u.name, e: u.email,
-              m: u.specialized || 'JEE Main (IIT Delhi)',
-              s: 'Session pending', status: 'Scheduled',
-              rank: 'AIR 4510', doc: u.isVerified ? 'Approved' : 'Pending'
+            const resSessions = await sessionApi.getAll({ counsellorId: userObj.id });
+            const resChats = await chatApi.getConversations(userObj.id);
+
+            const sessionStudents = resSessions.data.filter(s => s.student).map(s => ({
+              id: s.studentId, n: s.student.name, e: s.student.email,
+              m: s.student.specialized || 'General Counselling',
+              s: 'Session scheduled', status: s.status,
+              rank: 'N/A', doc: s.student.isVerified ? 'Approved' : 'Pending'
             }));
-            setStudentsList(mapped);
-            setSessionFormData(prev => ({ ...prev, student: mapped[0]?.n || '' }));
-            if (tab === 'overview') {
-              const resSessions = await sessionApi.getAll({ counsellorId: userObj.id });
-              const mappedS = resSessions.data.map(s => ({
-                id: s.id, studentId: s.studentId,
-                n: s.student?.name || 'Student',
-                m: s.topic, s: `${s.date} ${s.time}`, url: s.url, status: s.status
-              }));
-              setSessionsList(mappedS);
-              setStats([
-                { t: 'Assigned Students', v: String(mapped.length || 0), d: 'Total students registered', i: Users, c: 'bg-primary-50 text-primary-600' },
-                { t: 'Sessions Scheduled', v: String(mappedS.length), d: `Upcoming: ${mappedS.length}`, i: Clock, c: 'bg-green-50 text-green-600' },
-                { t: 'Query Support Requests', v: '0', d: 'Needs review response', i: MessageSquare, c: 'bg-amber-50 text-amber-600' }
-              ]);
-            }
+
+            const chatStudents = resChats.data.filter(u => u.role === 'Student').map(u => ({
+              id: u.id, n: u.name, e: u.email,
+              m: u.specialized || 'General Counselling',
+              s: 'New Message', status: 'Chat Contact',
+              rank: 'N/A', doc: u.isVerified ? 'Approved' : 'Pending'
+            }));
+
+            const uniqueStudents = [...new Map([...sessionStudents, ...chatStudents].map(s => [s.id, s])).values()];
+            setStudentsList(uniqueStudents);
+            setSessionFormData(prev => ({ ...prev, student: uniqueStudents[0]?.n || '' }));
+
+            const mappedS = resSessions.data.map(s => ({
+              id: s.id, studentId: s.studentId,
+              n: s.student?.name || 'Student',
+              m: s.topic, s: `${s.date} ${s.time}`, url: s.url, status: s.status
+            }));
+            setSessionsList(mappedS);
+            setSessionsList(mappedS);
+
+            setStats([
+              { t: 'Assigned Students', v: String(uniqueStudents.length), d: 'Total students registered', i: Users, c: 'bg-primary-50 text-primary-600' },
+              { t: 'Sessions Scheduled', v: String(mappedS.length), d: `Upcoming: ${mappedS.length}`, i: Clock, c: 'bg-green-50 text-green-600' },
+              { t: 'Query Support Requests', v: '0', d: 'Needs review response', i: MessageSquare, c: 'bg-amber-50 text-amber-600' }
+            ]);
+            fetchEnquiries(userObj.id);
           }
         } else if (tab === 'sessions') {
           if (sessionsList.length === 0) {
@@ -170,6 +247,8 @@ export default function CounsellorDashboard() {
             }));
             setSessionsList(mappedS);
           }
+        } else if (tab === 'enquiries') {
+          fetchEnquiries(userObj.id);
         }
         loadedTabs.current.add(tab);
       } catch (e) { console.error(`Counsellor tab [${tab}] load error:`, e); }
@@ -184,6 +263,49 @@ export default function CounsellorDashboard() {
     }
   }, [studentsList]);
 
+  // Load chat messages when student is selected with real-time sync
+  useEffect(() => {
+    if (!selectedChatStudent || !counsellorProfile.id) return;
+
+    chatApi.getMessages(counsellorProfile.id, selectedChatStudent.id)
+      .then(res => {
+        setChatMessages(res.data);
+        setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
+      })
+      .catch(() => setChatMessages([]));
+  }, [selectedChatStudent, counsellorProfile.id]);
+
+  useEffect(() => {
+    if (counsellorProfile.id) {
+      const socket = io('http://localhost:5000');
+      socketRef.current = socket;
+      socket.emit('join_room', counsellorProfile.id);
+
+      socket.on('receive_message', (data) => {
+        if (selectedStudentRef.current?.id === data.senderId) {
+          setChatMessages(prev => [...prev, data]);
+          setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
+        } else {
+             // Dynamically append new chatting student to list triggers overlay flaws triggers overlay flawlessly
+             userApi.getProfile(data.senderId).then(res => {
+                const u = res.data;
+                setStudentsList(prev => {
+                   if (prev.find(s => s.id === u.id)) return prev;
+                   return [...prev, {
+                      id: u.id, n: u.name, e: u.email,
+                      m: u.specialized || 'General Counselling',
+                      s: 'New Message', status: 'Chat Contact',
+                      rank: 'N/A', doc: u.isVerified ? 'Approved' : 'Pending'
+                   }];
+                });
+             }).catch(console.error);
+        }
+      });
+
+      return () => socket.disconnect();
+    }
+  }, [counsellorProfile.id]);
+
   const handleSendMessage = async () => {
     if (!chatInput.trim() || !selectedChatStudent || !counsellorProfile.id) return;
     const content = chatInput.trim();
@@ -196,6 +318,7 @@ export default function CounsellorDashboard() {
         content
       });
       setChatMessages(prev => [...prev, res.data]);
+      socketRef.current?.emit('send_message', { senderId: counsellorProfile.id, receiverId: selectedChatStudent.id, content, createdAt: new Date() });
       setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
     } catch (e) {
       console.error('Send message failed:', e);
@@ -206,42 +329,54 @@ export default function CounsellorDashboard() {
 
   return (
     <div className="flex h-screen bg-[#f3f6fc] overflow-hidden">
-      {/* Sidebar Navigation */}
+      {/* Sidebar - Fixed Drawer for Mobile */}
       <AnimatePresence>
         {isSidebarOpen && (
-          <motion.div 
-            initial={{ width: 0, opacity: 0 }}
-            animate={{ width: 280, opacity: 1 }}
-            exit={{ width: 0, opacity: 0 }}
-            className="h-full bg-white border-r border-slate-100 flex flex-col z-20 shadow-xl md:shadow-none"
-          >
-            <div className="p-6 flex items-center justify-between border-b border-slate-50">
-              <div className="flex items-center gap-2">
-                <GraduationCap className="h-7 w-7 text-primary-600" />
-                <span className="font-bold text-lg">Edu<span className="text-primary-600">Counsel</span></span>
+          <>
+            {/* Mobile Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsSidebarOpen(false)}
+              className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100] md:hidden"
+            />
+            
+            <motion.div
+              initial={{ x: '-100%', opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: '-100%', opacity: 0 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="fixed md:relative h-full bg-white border-r border-slate-100 flex flex-col z-[101] md:z-20 shadow-2xl md:shadow-none w-[280px]"
+            >
+              <div className="p-6 flex items-center justify-between border-b border-slate-50">
+                <div className="flex items-center gap-2">
+                  <GraduationCap className="h-7 w-7 text-primary-600" />
+                  <span className="font-bold text-lg">Edu<span className="text-primary-600">Guide</span></span>
+                </div>
+                <button onClick={() => setIsSidebarOpen(false)} className="md:hidden text-slate-500 hover:bg-slate-50 p-1 rounded-lg"><X className="h-5 w-5" /></button>
               </div>
-              <button onClick={() => setIsSidebarOpen(false)} className="md:hidden text-slate-500"><X className="h-5 w-5" /></button>
-            </div>
 
-            <nav className="p-4 flex-1 space-y-1">
-              {sidebarItems.map((item) => (
-                <button 
-                  key={item.id}
-                  onClick={() => handleTabChange(item.id)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-all ${activeTab === item.id ? 'bg-primary-50 text-primary-600' : 'text-slate-600 hover:bg-slate-50'}`}
-                >
-                  <item.icon className="h-5 w-5" />
-                  {item.label}
-                 </button>
-              ))}
-            </nav>
+              <nav className="p-4 flex-1 space-y-1 overflow-y-auto custom-scrollbar">
+                {sidebarItems.map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => handleTabChange(item.id)}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-all ${activeTab === item.id ? 'bg-primary-50 text-primary-600 border border-primary-100/50 shadow-sm' : 'text-slate-600 hover:bg-slate-50'}`}
+                  >
+                    <item.icon className={`h-5 w-5 ${activeTab === item.id ? 'text-primary-600' : 'text-slate-400'}`} />
+                    {item.label}
+                  </button>
+                ))}
+              </nav>
 
             <div className="p-4 border-t border-slate-50 space-y-1">
-              <Link to="/login" className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm text-red-600 hover:bg-red-50"><LogOut className="h-5 w-5" /> Logout</Link>
+              <button onClick={() => setIsLogoutModalOpen(true)} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm text-red-600 hover:bg-red-50"><LogOut className="h-5 w-5" /> Logout</button>
             </div>
           </motion.div>
-        )}
-      </AnimatePresence>
+        </>
+      )}
+    </AnimatePresence>
 
       {/* Main content Area */}
       <div className="flex-1 flex flex-col h-full overflow-y-auto overflow-x-hidden">
@@ -264,7 +399,9 @@ export default function CounsellorDashboard() {
                 className="bg-slate-50 p-2 rounded-xl text-slate-500 relative hover:bg-slate-100 duration-200"
               >
                 <Bell className="h-5 w-5" />
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full"></span>
+                {notifications.some(n => !n.isRead && !n.read) && (
+                  <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-slate-50"></span>
+                )}
               </button>
               {isNotificationsOpen && (
                  <motion.div 
@@ -272,19 +409,22 @@ export default function CounsellorDashboard() {
                     animate={{ opacity: 1, y: 0, scale: 1 }} 
                     className="absolute right-0 mt-2 w-80 bg-white border border-slate-100 rounded-2xl shadow-xl z-30 p-4 space-y-2"
                  >
-                    <div className="flex justify-between items-center border-b border-slate-50 pb-2 MB-1">
+                    <div className="flex justify-between items-center border-b border-slate-50 pb-2">
                        <h4 className="font-bold text-slate-800 text-sm">Notifications</h4>
-                       <span className="text-xs text-primary-600 font-semibold cursor-pointer">Mark all</span>
+                       <span onClick={handleMarkAllRead} className="text-xs text-primary-600 font-semibold cursor-pointer">Mark all read</span>
                     </div>
-                    <div className="space-y-2">
-                       <div className="p-2.5 border border-slate-50 rounded-xl hover:bg-slate-50 duration-150 cursor-pointer">
-                          <p className="font-bold text-slate-800 text-xs">New Student Assigned</p>
-                          <p className="text-[10px] text-slate-500 mt-0.5">Amit Kumar assigned for counselling documentation verification setup.</p>
-                       </div>
-                       <div className="p-2.5 border border-slate-50 rounded-xl hover:bg-slate-50 duration-150 cursor-pointer">
-                          <p className="font-bold text-slate-800 text-xs">Query Request</p>
-                          <p className="text-[10px] text-slate-500 mt-0.5">3 students waiting support replies in chat module triggers setup configurations.</p>
-                       </div>
+                    <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                      {notifications.length === 0 ? (
+                        <p className="text-xs text-slate-400 text-center py-6">No new notifications.</p>
+                      ) : (
+                        notifications.map((n, i) => (
+                          <div key={n.id || i} className={`p-3 border rounded-xl hover:bg-slate-50 duration-150 cursor-pointer ${n.isRead || n.read ? 'border-slate-50 bg-white' : 'border-primary-100 bg-primary-50/30'}`}>
+                            <p className={`font-bold text-xs ${n.isRead || n.read ? 'text-slate-700' : 'text-primary-800'}`}>{n.title || n.type || 'Notification'}</p>
+                            <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">{n.message}</p>
+                            <p className="text-[9px] text-slate-400 mt-2 font-medium">{new Date(n.createdAt || Date.now()).toLocaleString()}</p>
+                          </div>
+                        ))
+                      )}
                     </div>
                  </motion.div>
               )}
@@ -406,22 +546,22 @@ export default function CounsellorDashboard() {
                          <h1 className="text-2xl font-bold text-slate-900">My Students</h1>
                          <p className="text-slate-500 text-sm mt-0.5">List of students assigned to you for support counselling.</p>
                        </div>
-                       <div className="card-premium bg-white">
-                         <div className="overflow-x-auto">
-                            <table className="w-full text-sm">
-                              <thead>
-                                <tr className="border-b border-slate-100">
-                                  <th className="text-left font-semibold text-slate-400 py-3">Student Name</th>
-                                  <th className="text-left font-semibold text-slate-400 py-3">Applied Exam</th>
-                                  <th className="text-left font-semibold text-slate-400 py-3">Rank/Score</th>
-                                  <th className="text-left font-semibold text-slate-400 py-3">Docs Status</th>
-                                  <th className="text-left font-semibold text-slate-400 py-3">Actions</th>
-                                </tr>
-                              </thead>
+                       <div className="card-premium bg-white p-0 overflow-hidden border border-slate-100">
+                          <div className="overflow-x-auto custom-scrollbar shadow-inner">
+                             <table className="w-full text-sm min-w-[700px]">
+                               <thead>
+                                 <tr className="border-b border-slate-100">
+                                   <th className="text-left font-semibold text-slate-400 py-3 px-4 whitespace-nowrap">Student Name</th>
+                                   <th className="text-left font-semibold text-slate-400 py-3 px-4 whitespace-nowrap">Applied Exam</th>
+                                   <th className="text-left font-semibold text-slate-400 py-3 px-4 whitespace-nowrap">Rank/Score</th>
+                                   <th className="text-left font-semibold text-slate-400 py-3 px-4 whitespace-nowrap">Docs Status</th>
+                                   <th className="text-left font-semibold text-slate-400 py-3 px-4 whitespace-nowrap">Actions</th>
+                                 </tr>
+                               </thead>
                               <tbody className="divide-y divide-slate-100">
                                 {studentsList.map((u, i) => (
                                   <tr className="hover:bg-slate-50 duration-150" key={i}>
-                                    <td className="py-4">
+                                    <td className="py-4 px-4">
                                       <div className="flex items-center gap-3">
                                          <div className="w-9 h-9 rounded-2xl bg-primary-100 flex items-center justify-center font-bold text-primary-700 text-sm shadow-soft">
                                             {u.n ? u.n[0].toUpperCase() : 'S'}
@@ -432,9 +572,9 @@ export default function CounsellorDashboard() {
                                          </div>
                                       </div>
                                     </td>
-                                    <td className="py-4 text-slate-600 font-bold text-xs">{u.m}</td>
-                                    <td className="py-4 text-slate-700 font-bold text-xs">{u.rank}</td>
-                                    <td className="py-4">
+                                    <td className="py-4 px-4 text-slate-600 font-bold text-xs whitespace-nowrap">{u.m}</td>
+                                    <td className="py-4 px-4 text-slate-700 font-bold text-xs whitespace-nowrap">{u.rank}</td>
+                                    <td className="py-4 px-4 whitespace-nowrap">
                                        <span className={`px-2.5 py-1 rounded-lg text-xs font-bold ${u.doc === 'Approved' ? 'bg-green-50 text-green-600 border border-green-100' : 'bg-amber-50 text-amber-600 border border-amber-100'}`}>{u.doc}</span>
                                     </td>
                                     <td className="py-4">
@@ -450,7 +590,7 @@ export default function CounsellorDashboard() {
                        </div>
                      </div>
                    );
-                 case 'sessions':
+                  case 'sessions':
                    return (
                      <div className="space-y-6">
                        <div>
@@ -475,6 +615,74 @@ export default function CounsellorDashboard() {
                            </div>
                          ))}
                        </div>
+                     </div>
+                   );
+                 case 'enquiries':
+                   return (
+                     <div className="space-y-6">
+                       <div>
+                         <h1 className="text-2xl font-bold text-slate-900">Student Enquiries</h1>
+                         <p className="text-slate-500 text-sm mt-0.5">Review and respond to counselling requests from students.</p>
+                       </div>
+                       {enquiriesList.length === 0 ? (
+                         <div className="card-premium bg-white flex flex-col items-center justify-center py-20 text-center">
+                           <div className="bg-primary-50 p-4 rounded-2xl text-primary-600 mb-4">
+                             <ClipboardList className="h-8 w-8" />
+                           </div>
+                           <h3 className="font-bold text-slate-800">No Pending Enquiries</h3>
+                           <p className="text-xs text-slate-400 mt-1 max-w-xs">You have caught up with all student requests.</p>
+                         </div>
+                       ) : (
+                         <div className="space-y-4">
+                           {enquiriesList.map((enq, i) => (
+                             <div key={enq.id || i} className="card-premium bg-white">
+                               <div className="flex w-full justify-between items-start border-b border-slate-50 pb-4 mb-4">
+                                 <div className="flex items-center gap-3">
+                                   <div className="w-10 h-10 rounded-2xl bg-primary-100 flex items-center justify-center font-bold text-primary-700 text-sm shadow-soft">
+                                      {enq.student?.name ? enq.student.name[0].toUpperCase() : 'S'}
+                                   </div>
+                                   <div>
+                                     <h3 className="font-bold text-slate-800 text-base">{enq.student?.name || 'Student'}</h3>
+                                     <p className="text-xs text-slate-500">
+                                       Subject: <span className="font-semibold text-slate-700">{enq.subject}</span> • {new Date(enq.createdAt).toLocaleDateString()}
+                                     </p>
+                                   </div>
+                                 </div>
+                                 <span className={`px-3 py-1 rounded-xl text-xs font-bold ${
+                                   enq.status === 'Approved' ? 'bg-green-50 text-green-600' :
+                                   enq.status === 'Rejected' ? 'bg-red-50 text-red-600' :
+                                   'bg-amber-50 text-amber-600'
+                                 }`}>
+                                   {enq.status || 'Pending'}
+                                 </span>
+                               </div>
+                               <div className="mb-4">
+                                 <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Query Details</h4>
+                                 <p className="text-sm text-slate-600 bg-slate-50/50 p-3 rounded-xl border border-slate-100">{enq.query}</p>
+                               </div>
+                               
+                               {enq.status === 'Pending' && (
+                                 <div className="flex gap-3 justify-end pt-2 border-t border-slate-50">
+                                   <button 
+                                     onClick={() => handleEnquiryStatus(enq.id, 'Rejected')}
+                                     disabled={isUpdatingEnquiry}
+                                     className="bg-red-50 hover:bg-red-100 text-red-600 font-semibold px-5 py-2 rounded-xl text-xs duration-200"
+                                   >
+                                     Reject
+                                   </button>
+                                   <button 
+                                     onClick={() => handleEnquiryStatus(enq.id, 'Approved')}
+                                     disabled={isUpdatingEnquiry}
+                                     className="bg-green-500 hover:bg-green-600 text-white font-semibold px-5 py-2 rounded-xl text-xs shadow-soft duration-200"
+                                   >
+                                     Approve
+                                   </button>
+                                 </div>
+                               )}
+                             </div>
+                           ))}
+                         </div>
+                       )}
                      </div>
                    );
                  case 'chat':
@@ -639,7 +847,7 @@ export default function CounsellorDashboard() {
                        <div className="space-y-1">
                           <label className="text-xs font-semibold text-slate-600">Select Student</label>
                           <select value={sessionFormData.student} onChange={e => setSessionFormData({...sessionFormData, student: e.target.value})} className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-medium focus:outline-none">
-                             {studentsList.map((s, i) => (
+                             {allStudentsForSchedule.map((s, i) => (
                                 <option value={s.n} key={i}>{s.n}</option>
                              ))}
                           </select>
@@ -675,11 +883,11 @@ export default function CounsellorDashboard() {
                                 return;
                              }
                              try {
-                                const matchedStudent = studentsList.find(s => s.n === sessionFormData.student);
-                                if (!matchedStudent) {
-                                    alert("Oops: Please select a valid student from option menu: " + sessionFormData.student);
-                                    return;
-                                }
+                                 const matchedStudent = allStudentsForSchedule.find(s => s.n === sessionFormData.student);
+                                 if (!matchedStudent) {
+                                     showAlert("Oops: Please select a valid student from option menu: " + sessionFormData.student);
+                                     return;
+                                 }
                                 
                                 await sessionApi.create({
                                     counsellorId: counsellorProfile.id,
@@ -703,7 +911,7 @@ export default function CounsellorDashboard() {
                                     { t: 'Sessions Scheduled', v: String(mappedS.length), d: `Upcoming: ${mappedS.length}`, i: Clock, c: 'bg-green-50 text-green-600' },
                                     { t: 'Query Support Requests', v: '0', d: 'Needs review response', i: MessageSquare, c: 'bg-amber-50 text-amber-600' }
                                  ]);
-                             } catch (e) { alert("Create failed: " + e.message); console.error(e); }
+                             } catch (e) { showAlert("Create failed: " + e.message); console.error(e); }
                              
                              setIsScheduleModalOpen(false);
                           }} 
@@ -730,7 +938,35 @@ export default function CounsellorDashboard() {
                 </div>
               </motion.div>
             </div>
-          )}
+            )}
+          </AnimatePresence>
+          
+        <AnimatePresence>
+          {isLogoutModalOpen && (
+              <div className="fixed inset-0 bg-black/40 backdrop-blur-md z-[999] flex items-center justify-center p-4">
+                <motion.div initial={{ opacity: 0, scale: 0.85, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.8, y: 20 }} className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl text-center">
+                  <div className="p-4 rounded-full mx-auto w-16 h-16 bg-red-50 flex items-center justify-center mb-4">
+                    <LogOut className="h-8 w-8 text-red-500 animate-pulse" />
+                  </div>
+                  <h3 className="font-bold text-lg text-slate-800 mb-2">Ready to leave?</h3>
+                  <p className="text-slate-500 text-sm">You are about to log out from your session. You'll need to sign in again to access your dashboard.</p>
+                  
+                  <div className="pt-6 grid grid-cols-2 gap-3">
+                    <button onClick={() => setIsLogoutModalOpen(false)} className="w-full bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold py-3 rounded-xl text-sm duration-150">Cancel</button>
+                    <button 
+                      onClick={() => {
+                        localStorage.removeItem('user');
+                        localStorage.removeItem('token');
+                        navigate('/login', { replace: true });
+                      }} 
+                      className="w-full bg-red-500 hover:bg-red-600 text-white font-semibold py-3 rounded-xl text-sm shadow-soft duration-150 flex items-center justify-center gap-2"
+                    >
+                      <LogOut className="h-4 w-4" /> Log Out
+                    </button>
+                  </div>
+                </motion.div>
+              </div>
+            )}
         </AnimatePresence>
       </div>
     </div>

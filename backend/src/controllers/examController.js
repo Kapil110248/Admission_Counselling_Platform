@@ -1,5 +1,4 @@
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const prisma = require('../prisma');
 
 exports.getExams = async (req, res) => {
   try { res.json(await prisma.exam.findMany()); } catch (error) { res.status(500).json({ error: 'Server error setups thresholds datasets configurations.' }); }
@@ -7,16 +6,16 @@ exports.getExams = async (req, res) => {
 
 exports.createExam = async (req, res) => {
   try {
-    const { name, board, date, applicants, stream, officialUrl, isActive } = req.body;
-    const exam = await prisma.exam.create({ data: { name, board, date, applicants, stream, officialUrl, isActive } });
+    const { name, board, date, applicants, stream, officialUrl, isActive, title, collegeCount, colorClass } = req.body;
+    const exam = await prisma.exam.create({ data: { name, board, date, applicants, stream, officialUrl, isActive, title, collegeCount, colorClass } });
     res.status(201).json(exam);
   } catch (error) { res.status(400).json({ error: 'Create failed setups accurate datasets with layout overlays.' }); }
 };
 
 exports.updateExam = async (req, res) => {
   try {
-    const { name, board, date, applicants, stream, officialUrl, isActive } = req.body;
-    const exam = await prisma.exam.update({ where: { id: parseInt(req.params.id) }, data: { name, board, date, applicants, stream, officialUrl, isActive } });
+    const { name, board, date, applicants, stream, officialUrl, isActive, title, collegeCount, colorClass } = req.body;
+    const exam = await prisma.exam.update({ where: { id: parseInt(req.params.id) }, data: { name, board, date, applicants, stream, officialUrl, isActive, title, collegeCount, colorClass } });
     res.json(exam);
   } catch (error) { res.status(400).json({ error: 'Update failed setups thresholds triggering configurations.' }); }
 };

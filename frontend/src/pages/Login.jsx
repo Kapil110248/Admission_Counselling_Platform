@@ -1,26 +1,39 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { GraduationCap, Lock, Mail, Users, ShieldAlert, UserCheck, ArrowRight, Sparkles, Eye, EyeOff } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import { GraduationCap, Lock, Mail, Users, ShieldAlert, UserCheck, ArrowRight, Sparkles, Eye, EyeOff, X, AlertCircle, CheckCircle, ArrowLeft } from 'lucide-react';
 import { authApi } from '../api';
+import { useToast } from '../context/ToastContext';
 
 export default function Login() {
   const navigate = useNavigate();
+  const { showAlert } = useToast();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
+  const [selectedRole, setSelectedRole] = useState('Student');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [specialized, setSpecialized] = useState('');
 
   const handleRoleLogin = async () => {
     try {
       if (!isLogin) {
-        if (!name || !email || !password) { alert('Please fill all fields for registration'); return; }
-        const res = await authApi.register({ name, email, password });
+        if (!name || !email || !password || !confirmPassword) { showAlert('Please fill all fields for registration'); return; }
+        if (password !== confirmPassword) { showAlert('Passwords do not match!'); return; }
+        if (selectedRole === 'Counsellor' && !specialized.trim()) { showAlert('Please provide your expertise'); return; }
+        const res = await authApi.register({ name, email, password, role: selectedRole, specialized: selectedRole === 'Counsellor' ? specialized : null });
         localStorage.setItem('token', res.data.token);
         if (res.data.user) localStorage.setItem('user', JSON.stringify(res.data.user));
-        alert('Account Created Successfully!');
-        navigate('/student-dashboard');
+        
+        showAlert(selectedRole === 'Counsellor' ? 'Account Created! Approval pending from Admin.' : 'Account Created Successfully!', 'success');
+        
+        if (selectedRole === 'Counsellor') {
+            setIsLogin(true);
+        } else {
+            setTimeout(() => navigate('/student-dashboard'), 1500);
+        }
         return;
       }
 
@@ -34,7 +47,7 @@ export default function Login() {
       else navigate('/student-dashboard');
       
     } catch (error) {
-      alert(error.response?.data?.error || 'Authentication logic failed setups threshold configurations.');
+      showAlert(error.response?.data?.error || 'Authentication logic failed.');
     }
   };
 
@@ -66,7 +79,8 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center p-4 relative overflow-hidden text-slate-900">
+      
       {/* Background decoration */}
       <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-primary-300/30 rounded-full filter blur-[100px] animate-pulse"></div>
       <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-indigo-300/20 rounded-full filter blur-[120px] animate-pulse" style={{ animationDelay: '2s' }}></div>
@@ -78,17 +92,15 @@ export default function Login() {
           <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center opacity-20 mix-blend-overlay"></div>
           <div className="absolute inset-0 bg-gradient-to-t from-primary-900/90 to-primary-600/40"></div>
           
-          <motion.div 
-            initial={{ opacity: 0, x: -30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.7, delay: 0.2 }}
-            className="relative z-10 flex items-center gap-2"
+          <Link 
+            to="/"
+            className="relative z-10 flex items-center gap-2 group cursor-pointer"
           >
-             <div className="bg-white/20 backdrop-blur-md p-2 rounded-2xl text-white shadow-soft border border-white/20">
+             <div className="bg-white/20 backdrop-blur-md p-2 rounded-2xl text-white shadow-soft border border-white/20 group-hover:bg-white/30 transition-all duration-300">
                 <GraduationCap className="h-8 w-8" />
              </div>
-             <span className="font-bold text-3xl tracking-tight">Edu<span className="text-primary-200">Guide</span></span>
-          </motion.div>
+             <span className="font-bold text-3xl tracking-tight group-hover:text-primary-200 transition-colors">Edu<span className="text-primary-200 group-hover:text-white">Guide</span></span>
+          </Link>
 
           <motion.div 
             initial={{ opacity: 0, y: 30 }}
@@ -122,13 +134,17 @@ export default function Login() {
           animate="visible"
           className="w-full md:w-7/12 p-8 md:p-12 lg:p-16 flex flex-col justify-center bg-white"
         >
-          <motion.div variants={itemVariants} className="text-center md:text-left mb-8 md:hidden">
-            <div className="flex justify-center gap-2 items-center mb-4">
-               <div className="bg-primary-600 p-2 rounded-2xl text-white shadow-soft">
+          <motion.div variants={itemVariants} className="text-center md:text-left mb-8 flex items-center justify-between">
+            <Link to="/" className="flex gap-2 items-center group">
+               <div className="bg-primary-600 p-2 rounded-2xl text-white shadow-soft group-hover:scale-110 transition-transform">
                   <GraduationCap className="h-8 w-8" />
                </div>
                <span className="font-bold text-2xl text-slate-900 border-none">Edu<span className="text-primary-600">Guide</span></span>
-            </div>
+            </Link>
+
+            <Link to="/" className="text-slate-400 hover:text-primary-600 font-bold text-xs flex items-center gap-1.5 transition-colors">
+              <ArrowLeft className="h-3.5 w-3.5" /> Back to Home
+            </Link>
           </motion.div>
 
           <motion.div variants={itemVariants}>
@@ -142,6 +158,16 @@ export default function Login() {
 
           <div className="space-y-4 mt-8">
             {!isLogin && (
+              <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="space-y-2">
+                <label className="block text-xs font-bold text-slate-700 mb-1 ml-1">Register As</label>
+                <div className="flex gap-2 p-1 bg-slate-100 rounded-2xl">
+                  <button onClick={() => setSelectedRole('Student')} className={`flex-1 py-2 text-center text-xs font-bold rounded-xl duration-150 ${selectedRole === 'Student' ? 'bg-white text-primary-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>Student</button>
+                  <button onClick={() => setSelectedRole('Counsellor')} className={`flex-1 py-2 text-center text-xs font-bold rounded-xl duration-150 ${selectedRole === 'Counsellor' ? 'bg-white text-primary-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>Counsellor</button>
+                </div>
+              </motion.div>
+            )}
+
+            {!isLogin && (
                <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="space-y-1">
                   <label className="block text-xs font-bold text-slate-700 mb-1.5 ml-1">Full Name</label>
                   <div className="relative group">
@@ -153,6 +179,22 @@ export default function Login() {
                        onChange={(e)=>setName(e.target.value)}
                      />
                      <Users className="absolute left-4 top-4 h-4 w-4 text-slate-400 group-focus-within:text-primary-500 transition-colors" />
+                  </div>
+               </motion.div>
+            )}
+
+            {!isLogin && selectedRole === 'Counsellor' && (
+               <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="space-y-1">
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5 ml-1">Expertise / Specialization</label>
+                  <div className="relative group">
+                     <input 
+                       type="text" 
+                       placeholder="e.g., Medical Guidance, IIT JEE Support" 
+                       className="w-full bg-slate-50/50 border border-slate-200 rounded-2xl px-4 py-3.5 pl-12 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500 focus:bg-white font-medium text-slate-700 shadow-sm transition-all" 
+                       value={specialized}
+                       onChange={(e)=>setSpecialized(e.target.value)}
+                     />
+                     <Sparkles className="absolute left-4 top-4 h-4 w-4 text-slate-400 group-focus-within:text-primary-500 transition-colors" />
                   </div>
                </motion.div>
             )}
@@ -190,6 +232,22 @@ export default function Login() {
                   </button>
                </div>
             </motion.div>
+            
+            {!isLogin && (
+               <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="space-y-1">
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5 ml-1">Confirm Password</label>
+                  <div className="relative group">
+                     <input 
+                       type={showPassword ? "text" : "password"} 
+                       placeholder="Confirm your password..." 
+                       className="w-full bg-slate-50/50 border border-slate-200 rounded-2xl px-4 py-3.5 pl-12 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500 focus:bg-white font-medium text-slate-700 shadow-sm transition-all" 
+                       value={confirmPassword}
+                       onChange={(e)=>setConfirmPassword(e.target.value)}
+                     />
+                     <Lock className="absolute left-4 top-4 h-4 w-4 text-slate-400 group-focus-within:text-primary-500 transition-colors" />
+                  </div>
+               </motion.div>
+            )}
           </div>
 
           <motion.div variants={itemVariants} className="mt-8">
